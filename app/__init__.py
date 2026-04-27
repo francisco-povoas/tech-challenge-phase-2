@@ -1,18 +1,12 @@
-import uvicorn
-
-from app.config import get_settings
-from app.infra.api.app import create_app
-
-SETTINGS = get_settings()
-
-app = create_app(SETTINGS)
-
-
-def start_server() -> None:
-    uvicorn.run(
-        "app:app",
-        host=SETTINGS.SERVER_HOST,
-        port=SETTINGS.SERVER_PORT,
-        reload=SETTINGS.SERVER_RELOAD,
-        log_level=SETTINGS.LOG_LEVEL.lower(),
-    )
+# app/__init__.py
+# This module is intentionally minimal to avoid side effects during import.
+# All bootstrap logic has been moved to app.main to ensure:
+# - Unit tests can import application/domain modules without initializing infrastructure
+# - Database engine is not created until explicitly needed
+# - Settings validation only happens when the server actually starts
+#
+# Use:
+#   python -m app  # starts server
+# Or:
+#   from app.main import create_app, get_settings  # in production code
+#   from app.modules.iam.application.dtos import ...  # in tests (no side effects)

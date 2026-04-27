@@ -39,7 +39,7 @@ async def test_if_fails_to_get_access_token_for_non_existing_user(client, auth_r
     response = await client.post(f"{auth_route}/token", data=unknown)
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Incorrect username or password"
+    assert response.json()["detail"] == "Usuário ou senha incorretos"
 
 
 async def test_if_fails_to_get_access_token_for_wrong_credentials(

@@ -1,4 +1,4 @@
-from app.infra.security.crypto import Hasher
+from app.shared.infra.security.crypto import Hasher
 
 
 def test_if_hashes_value():

@@ -1,3 +1,2 @@
-CREATE DATABASE app_dev;
 CREATE DATABASE app_test;
 CREATE DATABASE app_prod;

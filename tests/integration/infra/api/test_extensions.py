@@ -1,6 +1,6 @@
 import pytest
 
-from app.infra.api.extensions import adapt_type_error
+from app.api.extensions import adapt_type_error
 
 
 @pytest.mark.parametrize(

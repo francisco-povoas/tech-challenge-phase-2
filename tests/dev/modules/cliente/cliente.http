@@ -1,0 +1,224 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Obter tokens válidos executando as requisições em tests/dev/modules/iam/auth.http
+## Substituir os valores abaixo pelos tokens retornados na resposta de /api/v1/auth/token
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZTliNDBjYi0wNDYyLTRlMzMtOTQzZC1lZDFiNDMwNDY0MTIiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3NzczNDE1MjV9.0SpChDBUP-sxUpbA2v7Jz7hMsdp4YzXzvm26JVGDChY
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDBjZjQ1MC1jYWM5LTRkNzUtYjYxNC01MDhjMDk4NmFkZWMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzM0MjExMH0.a7SIugX5qMLEwGnqmphF0LgBYvOmxFHfa9iyWlIqkso
+@tokenSemPermissao = cole aqui
+
+## ID de cliente para uso nas requisições de busca, atualização, ativar e desativar.
+## Copiar o valor de "id" retornado na resposta de criação ou listagem.
+@clienteId = 7ad6c9b1-84aa-4c47-8b15-5aa77086969b
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA DE TESTES
+## 1. Criar PF com Admin → copiar id para @clienteId
+## 2. Criar PJ com Atendente
+## 3. Testar erros de validação e autorização
+## 4. Listar e filtrar
+## 5. Buscar por id
+## 6. Atualizar
+## 7. Desativar → listar ativo=false
+## 8. Ativar → listar ativo=true
+## 9. Remover
+## ============================================================
+
+
+### [1] Criar cliente PF — com token Administrador (deve conseguir)
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Joao da Silva",
+    "cpf_cnpj": "12345678901",
+    "telefone": "11999998888",
+    "email": "joao.silva@example.com",
+    "cep": "01001000",
+    "logradouro": "Praca da Se",
+    "numero": "100",
+    "complemento": "Sala 1",
+    "bairro": "Se",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+
+### [2] Criar cliente PJ — com token Atendente (deve conseguir)
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PJ",
+    "nome_razao_social": "Auto Pecas Exemplo LTDA",
+    "cpf_cnpj": "12345678000199",
+    "telefone": "1133334444",
+    "email": "contato@autopecasexemplo.com",
+    "cep": "01310000",
+    "logradouro": "Avenida Paulista",
+    "numero": "1000",
+    "complemento": "Conjunto 101",
+    "bairro": "Bela Vista",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+
+### [3] Criar cliente — sem autenticação (deve falhar — 401)
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Sem Token",
+    "cpf_cnpj": "98765432100",
+    "telefone": "11900000001"
+}
+
+
+### [4] Criar cliente — com usuário sem permissão (deve falhar — 403)
+## Usar token de perfil Mecanico ou outro sem permissão de Administrador/Atendente
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenSemPermissao}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Sem Permissao",
+    "cpf_cnpj": "98765432100",
+    "telefone": "11900000001"
+}
+
+
+### [5] Criar cliente — CPF/CNPJ duplicado (deve falhar — 409)
+## Usa o mesmo cpf_cnpj do cliente PF criado no passo [1]
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Joao da Silva Duplicado",
+    "cpf_cnpj": "12345678901",
+    "telefone": "11988887777"
+}
+
+
+### [6] Criar cliente — tipo_pessoa inválido (deve falhar — 400)
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo_pessoa": "XX",
+    "nome_razao_social": "Tipo Invalido",
+    "cpf_cnpj": "11122233344",
+    "telefone": "11900000002"
+}
+
+
+### [7] Criar cliente PF — CPF com dígitos incorretos (deve falhar — 400)
+## CPF deve ter 11 dígitos; aqui enviamos 10
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "CPF Invalido",
+    "cpf_cnpj": "1234567890",
+    "telefone": "11900000003"
+}
+
+
+### [8] Criar cliente PJ — CNPJ com dígitos incorretos (deve falhar — 400)
+## CNPJ deve ter 14 dígitos; aqui enviamos 13
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo_pessoa": "PJ",
+    "nome_razao_social": "CNPJ Invalido LTDA",
+    "cpf_cnpj": "1234567800019",
+    "telefone": "1133330000"
+}
+
+
+### [9] Listar todos os clientes
+GET {{baseUrl}}/api/v1/clientes HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [10] Listar clientes filtrando por nome
+GET {{baseUrl}}/api/v1/clientes?nome=Joao HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [11] Listar clientes filtrando por cpf_cnpj
+GET {{baseUrl}}/api/v1/clientes?cpf_cnpj=12345678901 HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [12] Listar clientes filtrando por ativo=true
+GET {{baseUrl}}/api/v1/clientes?ativo=true HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [13] Buscar cliente por ID
+## Substituir @clienteId pelo id copiado da resposta de criação ou listagem
+GET {{baseUrl}}/api/v1/clientes/{{clienteId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [14] Atualizar dados do cliente (PATCH — campos não enviados são preservados)
+PATCH {{baseUrl}}/api/v1/clientes/{{clienteId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome_razao_social": "Joao da Silva Atualizado",
+    "telefone": "11977776666",
+    "email": "joao.atualizado@example.com",
+    "cep": "01310100",
+    "logradouro": "Avenida Paulista",
+    "numero": "200",
+    "complemento": "Apto 5",
+    "bairro": "Bela Vista",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+
+### [15] Desativar cliente
+PATCH {{baseUrl}}/api/v1/clientes/{{clienteId}}/desativar HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [16] Listar somente clientes inativos (conferir que o cliente foi desativado)
+GET {{baseUrl}}/api/v1/clientes?ativo=false HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [17] Ativar cliente
+PATCH {{baseUrl}}/api/v1/clientes/{{clienteId}}/ativar HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [18] Listar somente clientes ativos (conferir que o cliente foi reativado)
+GET {{baseUrl}}/api/v1/clientes?ativo=true HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [19] Remover cliente permanentemente (204 No Content)
+DELETE {{baseUrl}}/api/v1/clientes/{{clienteId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [20] Buscar cliente removido (deve falhar — 404)
+GET {{baseUrl}}/api/v1/clientes/{{clienteId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}

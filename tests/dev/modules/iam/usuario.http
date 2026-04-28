@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:8000
-@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYWE3OTZlZi03YzhjLTQyM2UtODkxOC1kYmViYWNhNjE0ODAiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3NzcyMzM5OTN9.csSyLRyDAmC1Y5EB6ToG0pxyEjxj6xSgMu0SqacxE30
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OGZkNWFkMy0xZjQxLTQ3YjYtODY1NC1kNmNhZGVjNWVmYzYiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3NzczNDEyNTd9.L4JGpNCD3zO_yhE_E2nzyot0uY13kubcQpfivmAeRi4
 @tokenUsuario = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiNWMxZmZlOS0xOTE5LTRiNGItODVmNi0zNWUxYmM5ZjA2MjQiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3MjM0NjExfQ.YBg6vXpLJ9LUgobSlphcHHzNUBEFY_TLVYYH0KMhFA0
 ## Sequencia de testes
 ## Sobe container com seed populado, 1 usuario com perfil administrador criado
@@ -37,7 +37,7 @@ Authorization: Bearer {{tokenAdmin}}
     "nome": "Francisco Povoas",
     "email": "francisco.povoasSilva3@example.com",
     "senha": "senha123",
-    "perfis": ["Administrador", "Atendente"]
+    "perfis": ["Atendente"]
 }
 
 ### Criar usuário (com autenticação - deve conseguir)

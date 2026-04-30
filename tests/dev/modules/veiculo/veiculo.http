@@ -1,0 +1,277 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Obter tokens válidos executando as requisições em tests/dev/modules/iam/auth.http
+## Substituir os valores abaixo pelos tokens retornados na resposta de /api/v1/auth/token
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZTliNDBjYi0wNDYyLTRlMzMtOTQzZC1lZDFiNDMwNDY0MTIiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc1MDMxODl9.aXJ4Kw00-uffdBY1W8sgM1whl7E1giiIlzK4qNMONvM
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDBjZjQ1MC1jYWM5LTRkNzUtYjYxNC01MDhjMDk4NmFkZWMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzUwNjkyOH0.hX1d0UiQDbyqQsWnxv-z2-wnvAmJgUH2oOWca-CseS8
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlM2ExZWM3MS01ODcxLTRlMjAtYTFjZS1mNGZlYjQ2NThlNGQiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3NTA2NTUxfQ.tuCXmmm_roG94sTXD5X9ndyfenKyToL6OnTZndGOSdo
+## Copiar o valor de "id" retornado na resposta de criação ou listagem de clientes
+## (ver tests/dev/modules/cliente/cliente.http).
+@clienteId = 4968106f-1030-4024-9f4f-ca51fbc2536c
+
+## ID de veículo para uso nas requisições de busca, atualização e remoção.
+## Copiar o valor de "id" retornado na resposta de criação ou listagem de veículos.
+@veiculoId = 0d675e3c-5389-4d87-9c0d-7db8186daa78
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA DE TESTES
+## 1. Garantir que existe um cliente ativo (ver cliente.http) e copiar id para @clienteId
+## 2. Criar veículo com Admin → copiar id para @veiculoId
+## 3. Criar veículo com Atendente
+## 4. Testar erros de autorização e validação
+## 5. Listar e filtrar veículos
+## 6. Buscar por id
+## 7. Atualizar
+## 8. Remover (DELETE)
+## 9. Confirmar remoção buscando pelo id removido (404)
+## ============================================================
+
+
+### [1] Criar veículo — com token Atendente (deve conseguir — 201)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "ABC1D23",
+    "marca": "Toyota",
+    "modelo": "Corolla",
+    "ano_fabricacao": 2020,
+    "ano_modelo": 2021,
+    "cor": "Prata"
+}
+
+
+### [2] Criar veículo — com token Atendente (deve conseguir — 201)
+## Usar placa diferente para não conflitar com o passo [1]
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "DEF2E34",
+    "marca": "Honda",
+    "modelo": "Civic",
+    "ano_fabricacao": 2019,
+    "ano_modelo": 2020,
+    "cor": "Preto"
+}
+
+
+### [3] Criar veículo — sem autenticação (deve falhar — 401)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "SEM0T00",
+    "marca": "Fiat",
+    "modelo": "Uno",
+    "ano_fabricacao": 2015,
+    "ano_modelo": 2016,
+    "cor": "Vermelho"
+}
+
+
+### [4] Criar veículo — com usuário sem permissão (deve falhar — 403)
+## Usar token de perfil Mecânico ou outro sem perfil Administrador/Atendente
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "SEM0P00",
+    "marca": "Fiat",
+    "modelo": "Palio",
+    "ano_fabricacao": 2016,
+    "ano_modelo": 2017,
+    "cor": "Azul"
+}
+
+
+### [5] Criar veículo — placa duplicada (deve falhar — 409)
+## Usa a mesma placa do veículo criado no passo [1]
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "ABC1D23",
+    "marca": "Volkswagen",
+    "modelo": "Gol",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2022,
+    "cor": "Branco"
+}
+
+
+### [6] Criar veículo — cliente_id inexistente (deve falhar — 404)
+## UUID válido mas não cadastrado no banco
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "00000000-0000-0000-0000-000000000000",
+    "placa": "GHI3F45",
+    "marca": "Ford",
+    "modelo": "Ka",
+    "ano_fabricacao": 2018,
+    "ano_modelo": 2019,
+    "cor": "Branco"
+}
+
+
+### [7] Criar veículo — placa com formato inválido (deve falhar — 400)
+## Placa não corresponde ao formato antigo (ABC1234) nem Mercosul (ABC1D23)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "INVALIDA",
+    "marca": "Ford",
+    "modelo": "Fiesta",
+    "ano_fabricacao": 2018,
+    "ano_modelo": 2019,
+    "cor": "Cinza"
+}
+
+
+### [8] Criar veículo — marca obrigatória vazia (deve falhar — 400)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "JKL4G56",
+    "marca": "",
+    "modelo": "Onix",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2022,
+    "cor": "Vermelho"
+}
+
+
+### [9] Criar veículo — modelo obrigatório vazio (deve falhar — 400)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "MNO5H67",
+    "marca": "Chevrolet",
+    "modelo": "",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2022,
+    "cor": "Prata"
+}
+
+
+### [10] Criar veículo — ano_fabricacao inválido, anterior a 1900 (deve falhar — 400)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "PQR6I78",
+    "marca": "Renault",
+    "modelo": "Sandero",
+    "ano_fabricacao": 1800,
+    "ano_modelo": 2020,
+    "cor": "Azul"
+}
+
+
+### [11] Criar veículo — ano_modelo inválido, anterior a 1900 (deve falhar — 400)
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "STU7J89",
+    "marca": "Renault",
+    "modelo": "Logan",
+    "ano_fabricacao": 2020,
+    "ano_modelo": 1850,
+    "cor": "Verde"
+}
+
+
+### [12] Listar todos os veículos
+GET {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [13] Listar veículos filtrando por cliente_id
+## Retorna somente os veículos vinculados ao cliente informado
+GET {{baseUrl}}/api/v1/veiculos?cliente_id={{clienteId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [14] Listar veículos filtrando por placa
+## Busca exata pela placa normalizada (maiúsculas, sem hífen/espaço)
+GET {{baseUrl}}/api/v1/veiculos?placa=ABC1D23 HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [15] Listar veículos filtrando por marca
+## Busca parcial case-insensitive
+GET {{baseUrl}}/api/v1/veiculos?marca=Toyota HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [16] Listar veículos filtrando por modelo
+## Busca parcial case-insensitive
+GET {{baseUrl}}/api/v1/veiculos?modelo=Corolla HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [17] Buscar veículo por ID
+## Substituir @veiculoId pelo id copiado da resposta de criação ou listagem
+GET {{baseUrl}}/api/v1/veiculos/{{veiculoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [18] Buscar veículo por ID inexistente (deve falhar — 404)
+GET {{baseUrl}}/api/v1/veiculos/00000000-0000-0000-0000-000000000000 HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [19] Atualizar veículo (PATCH — campos não enviados são preservados)
+## placa e cliente_id são imutáveis e não podem ser alterados por esta rota.
+## Substituir @veiculoId pelo id copiado da resposta de criação ou listagem
+PATCH {{baseUrl}}/api/v1/veiculos/{{veiculoId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "marca": "Toyota",
+    "modelo": "Corolla Cross",
+    "ano_fabricacao": 2022,
+    "ano_modelo": 2023,
+    "cor": "Branco Perolado"
+}
+
+
+### [20] Remover veículo permanentemente (deve retornar 204 No Content)
+## Substituir @veiculoId pelo id copiado da resposta de criação ou listagem
+DELETE {{baseUrl}}/api/v1/veiculos/{{veiculoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [21] Buscar veículo removido (deve falhar — 404)
+## Confirma que o veículo foi removido com sucesso
+GET {{baseUrl}}/api/v1/veiculos/{{veiculoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}

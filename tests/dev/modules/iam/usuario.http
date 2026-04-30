@@ -1,5 +1,10 @@
 @baseUrl = http://localhost:8000
-@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OGZkNWFkMy0xZjQxLTQ3YjYtODY1NC1kNmNhZGVjNWVmYzYiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3NzczNDEyNTd9.L4JGpNCD3zO_yhE_E2nzyot0uY13kubcQpfivmAeRi4
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZTliNDBjYi0wNDYyLTRlMzMtOTQzZC1lZDFiNDMwNDY0MTIiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc1MDUzNTd9.hnhITVpzJEnHkjcXf3_UMn0xgruAjBfF1SALFSwZhBA
+
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDBjZjQ1MC1jYWM5LTRkNzUtYjYxNC01MDhjMDk4NmFkZWMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzUwNTQ2M30.XdM_Jmml5-EPhPbeaiDxgT2wi9r-uQuOpMZU2POVxQo
+
+
 @tokenUsuario = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiNWMxZmZlOS0xOTE5LTRiNGItODVmNi0zNWUxYmM5ZjA2MjQiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3MjM0NjExfQ.YBg6vXpLJ9LUgobSlphcHHzNUBEFY_TLVYYH0KMhFA0
 ## Sequencia de testes
 ## Sobe container com seed populado, 1 usuario com perfil administrador criado
@@ -24,7 +29,7 @@ Authorization: Bearer {{tokenAdmin}}
 
 ### Filtrar por id
 # aqui retorna o perfil do usuario.
-GET {{baseUrl}}/api/v1/usuarios/1d613b21-5190-428f-944f-d0f1fb7fb133 HTTP/1.1
+GET {{baseUrl}}/api/v1/usuarios/400cf450-cac9-4d75-b614-508c0986adec HTTP/1.1
 Authorization: Bearer {{tokenAdmin}}
 
 
@@ -38,6 +43,18 @@ Authorization: Bearer {{tokenAdmin}}
     "email": "francisco.povoasSilva3@example.com",
     "senha": "senha123",
     "perfis": ["Atendente"]
+}
+
+### Criar usuário (com autenticação - deve conseguir)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Carlos Silva",
+    "email": "carlos.silva@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
 }
 
 ### Criar usuário (com autenticação - deve conseguir)
@@ -68,7 +85,7 @@ Content-Type: application/json
 Authorization: Bearer {{tokenUsuario}}
 
 ### Deletar usuário
-DELETE {{baseUrl}}/api/v1/usuarios/1dc84ff0-543e-406d-b6a4-5ce01e86c2e6 HTTP/1.1
+DELETE {{baseUrl}}/api/v1/usuarios/e3a1ec71-5871-4e20-a1ce-f4feb4658e4 HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer {{tokenAdmin}}
 

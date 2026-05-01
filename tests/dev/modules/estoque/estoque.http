@@ -1,0 +1,342 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Obter tokens válidos executando as requisições em tests/dev/modules/iam/auth.http
+## Substituir os valores abaixo pelos tokens retornados na resposta de /api/v1/auth/token
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDBjZjQ1MC1jYWM5LTRkNzUtYjYxNC01MDhjMDk4NmFkZWMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzY1ODczNn0.LnMxLkyFQiHtjJCiVO1M6HYZ7l8Q4cYaNmOXSltdQNE
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDBjZjQ1MC1jYWM5LTRkNzUtYjYxNC01MDhjMDk4NmFkZWMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzY1ODc1NX0.Y3rjhwXAIw6A2MND40V0Rj-yIvQroVVKF-xmq_QGV90
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlM2ExZWM3MS01ODcxLTRlMjAtYTFjZS1mNGZlYjQ2NThlNGQiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3NjU4Nzc0fQ.ZX2MTHE_yCtqtnvqE1SYmqPSbVzbfT3XaSWeFcaXp0I
+
+## ID de item de estoque para uso nas requisições de busca, atualização, ativar e desativar.
+## Copiar o valor de "id" retornado na resposta de criação ou listagem.
+@itemEstoqueId = 5655c65c-adcc-44e2-81ac-fe5da5615319
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA DE TESTES
+##  1. Criar item PECA com Admin         → copiar id para @itemEstoqueId
+##  2. Criar item INSUMO com Atendente
+##  3. Criar item para testar baixo estoque
+##  4. Testar erros de autorização (sem token, sem permissão)
+##  5. Testar erros de validação (código duplicado, tipo inválido, valores inválidos)
+##  6. Testar tentativa de envio de quantidade_reservada no create
+##  7. Listar todos os itens
+##  8. Filtrar por tipo, nome, código, ativo e baixo_estoque
+##  9. Buscar por id
+## 10. Atualizar
+## 11. Testar tentativa de alteração direta de quantidade_reservada no PATCH
+## 12. Desativar → listar ativo=false
+## 13. Ativar   → listar ativo=true
+## ============================================================
+
+
+### [1] Criar item de estoque do tipo PECA — com token Administrador (deve conseguir — 201)
+## Anotar o "id" retornado e atualizar @itemEstoqueId acima
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Filtro de oleo",
+    "descricao": "Filtro de oleo para motores flex",
+    "codigo": "PEC-FILTRO-OLEO-001",
+    "quantidade_disponivel": 15,
+    "quantidade_minima": 5,
+    "valor_unitario": 35.90
+}
+
+
+### [2] Criar item de estoque do tipo INSUMO — com token Atendente (deve conseguir — 201)
+## Usar código diferente para evitar conflito de unicidade
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "INSUMO",
+    "nome": "Oleo 5W30",
+    "descricao": "Oleo sintetico 5W30",
+    "codigo": "INS-OLEO-5W30-001",
+    "quantidade_disponivel": 20,
+    "quantidade_minima": 8,
+    "valor_unitario": 45.50
+}
+
+
+### [3] Criar item com baixo estoque — com token Administrador (deve conseguir — 201)
+## Item onde quantidade_disponivel (2) <= quantidade_minima (5)
+## Útil para testar o filtro baixo_estoque=true (passo [19])
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Pastilha de freio dianteira",
+    "descricao": "Jogo de pastilhas de freio dianteiras",
+    "codigo": "PEC-PASTILHA-FREIO-001",
+    "quantidade_disponivel": 2,
+    "quantidade_minima": 5,
+    "valor_unitario": 120.00
+}
+
+
+### [4] Criar item — sem autenticação (deve falhar — 401)
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+
+{
+    "tipo": "PECA",
+    "nome": "Vela de ignicao",
+    "descricao": "Vela de ignicao iridium",
+    "codigo": "PEC-VELA-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 4,
+    "valor_unitario": 28.00
+}
+
+
+### [5] Criar item — com usuário sem permissão (deve falhar — 403)
+## Usar token de perfil Mecanico ou outro sem permissão de Administrador/Atendente
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tipo": "PECA",
+    "nome": "Correia dentada",
+    "descricao": "Correia dentada do motor",
+    "codigo": "PEC-CORREIA-001",
+    "quantidade_disponivel": 6,
+    "quantidade_minima": 2,
+    "valor_unitario": 95.00
+}
+
+
+### [6] Criar item — código duplicado (deve falhar — 409)
+## Usa o mesmo código do item criado no passo [1]
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Filtro de oleo alternativo",
+    "descricao": "Codigo ja cadastrado anteriormente",
+    "codigo": "PEC-FILTRO-OLEO-001",
+    "quantidade_disponivel": 5,
+    "quantidade_minima": 2,
+    "valor_unitario": 30.00
+}
+
+
+### [7] Criar item — tipo inválido (deve falhar — 422)
+## Regra de domínio: tipo deve ser PECA ou INSUMO
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "OUTRO",
+    "nome": "Item tipo invalido",
+    "descricao": "Tipo nao aceito pela API",
+    "codigo": "TST-TIPO-INVALIDO-001",
+    "quantidade_disponivel": 5,
+    "quantidade_minima": 2,
+    "valor_unitario": 10.00
+}
+
+
+### [8] Criar item — nome vazio (deve falhar — 400 ou 422)
+## Regra de domínio: nome não pode ser vazio
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "",
+    "descricao": "Nome vazio invalido",
+    "codigo": "TST-NOME-VAZIO-001",
+    "quantidade_disponivel": 5,
+    "quantidade_minima": 2,
+    "valor_unitario": 10.00
+}
+
+
+### [9] Criar item — quantidade_disponivel negativa (deve falhar — 400)
+## Regra de domínio: quantidade_disponivel deve ser >= 0
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Item qtd disponivel negativa",
+    "descricao": "Quantidade disponivel invalida",
+    "codigo": "TST-QTD-DISP-NEG-001",
+    "quantidade_disponivel": -1,
+    "quantidade_minima": 2,
+    "valor_unitario": 10.00
+}
+
+
+### [10] Criar item — quantidade_minima negativa (deve falhar — 400)
+## Regra de domínio: quantidade_minima deve ser >= 0
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Item qtd minima negativa",
+    "descricao": "Quantidade minima invalida",
+    "codigo": "TST-QTD-MIN-NEG-001",
+    "quantidade_disponivel": 5,
+    "quantidade_minima": -1,
+    "valor_unitario": 10.00
+}
+
+
+### [11] Criar item — valor_unitario negativo (deve falhar — 400)
+## Regra de domínio: valor_unitario deve ser >= 0
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Item valor unitario negativo",
+    "descricao": "Valor unitario invalido",
+    "codigo": "TST-VALOR-NEG-001",
+    "quantidade_disponivel": 5,
+    "quantidade_minima": 2,
+    "valor_unitario": -10.00
+}
+
+
+### [12] Criar item — tentativa de envio de quantidade_reservada no create
+## quantidade_reservada NÃO deve ser definida pelo CRUD administrativo.
+## O use case sempre força quantidade_reservada = 0 na criação.
+## Se o campo for ignorado pelo schema de entrada (CriarItemEstoqueRequest),
+## a API aceita o payload e cria o item com quantidade_reservada = 0.
+## Se o schema rejeitar o campo extra, a API pode retornar 422.
+## Em ambos os casos, verificar no response que quantidade_reservada == 0.
+## A reserva será controlada futuramente pelos use cases de Ordem de Serviço.
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "INSUMO",
+    "nome": "Liquido de freio DOT4",
+    "descricao": "Liquido de freio DOT4 500ml",
+    "codigo": "INS-LIQ-FREIO-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 3,
+    "valor_unitario": 22.50,
+    "quantidade_reservada": 99
+}
+
+
+### [13] Listar todos os itens de estoque
+GET {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [14] Listar itens filtrando por tipo PECA
+GET {{baseUrl}}/api/v1/itens-estoque?tipo=PECA HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [15] Listar itens filtrando por tipo INSUMO
+GET {{baseUrl}}/api/v1/itens-estoque?tipo=INSUMO HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [16] Listar itens filtrando por nome (busca parcial, case-insensitive)
+GET {{baseUrl}}/api/v1/itens-estoque?nome=oleo HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [17] Listar itens filtrando por código (igualdade exata)
+GET {{baseUrl}}/api/v1/itens-estoque?codigo=PEC-FILTRO-OLEO-001 HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [18] Listar itens filtrando por ativo=true
+GET {{baseUrl}}/api/v1/itens-estoque?ativo=true HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [19] Listar itens filtrando por ativo=false
+GET {{baseUrl}}/api/v1/itens-estoque?ativo=false HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [20] Listar itens com baixo estoque
+## Retorna itens onde quantidade_disponivel <= quantidade_minima
+## O item criado no passo [3] (quantidade_disponivel=2, quantidade_minima=5) deve aparecer aqui
+GET {{baseUrl}}/api/v1/itens-estoque?baixo_estoque=true HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [21] Buscar item de estoque por ID
+## Substituir @itemEstoqueId pelo id copiado da resposta de criação ou listagem
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [22] Atualizar item de estoque (PATCH — campos não enviados são preservados)
+## quantidade_reservada NÃO é enviada — será preservada sem alteração
+PATCH {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Filtro de oleo premium",
+    "descricao": "Filtro de oleo premium para motores flex e turbo",
+    "codigo": "PEC-FILTRO-OLEO-001",
+    "quantidade_disponivel": 18,
+    "quantidade_minima": 6,
+    "valor_unitario": 39.90
+}
+
+
+### [23] Tentar atualizar quantidade_reservada diretamente no PATCH administrativo
+## quantidade_reservada NÃO deve ser alterada pelo PATCH administrativo.
+## A reserva será controlada futuramente pelos use cases de Ordem de Serviço,
+## que atualizarão item_estoque e ordem_servico_item em uma única transação.
+## Se o campo for ignorado pelo schema (AtualizarItemEstoque), a API aceita o payload
+## e preserva o valor atual de quantidade_reservada sem modificá-lo.
+## Se o schema rejeitar o campo extra, a API pode retornar 422.
+## Em ambos os casos, verificar no response que quantidade_reservada não foi alterada.
+PATCH {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "quantidade_disponivel": 18,
+    "quantidade_reservada": 99
+}
+
+
+### [24] Desativar item de estoque (soft delete — não remove do banco)
+PATCH {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}}/desativar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [25] Listar itens com ativo=false — confirmar que item desativado aparece
+GET {{baseUrl}}/api/v1/itens-estoque?ativo=false HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [26] Ativar item de estoque novamente
+PATCH {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}}/ativar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [27] Listar itens com ativo=true — confirmar que item voltou a aparecer
+GET {{baseUrl}}/api/v1/itens-estoque?ativo=true HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}

@@ -1,0 +1,220 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Obter tokens válidos executando as requisições em tests/dev/modules/iam/auth.http
+## Substituir os valores abaixo pelos tokens retornados na resposta de /api/v1/auth/token
+
+@tokenAdmin = COLE_TOKEN_ADMIN_AQUI
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDBjZjQ1MC1jYWM5LTRkNzUtYjYxNC01MDhjMDk4NmFkZWMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzY0ODQ2Mn0.bkGn2irFiljnQexYmdOar8BHkFXG23frtfQgq8akeZc
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlM2ExZWM3MS01ODcxLTRlMjAtYTFjZS1mNGZlYjQ2NThlNGQiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3NjQ4NzY3fQ.qyQbBS6Xp6vIxTIguN-RJoN1lmPAJLrxi9W215j0M1c
+
+## ID de serviço para uso nas requisições de busca, atualização, ativar e desativar.
+## Copiar o valor de "id" retornado na resposta de criação ou listagem.
+@servicoId = 631e0e0b-5b96-4573-90fd-224fbe25a04b
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA DE TESTES
+## 1. Criar serviço com Admin → copiar id para @servicoId
+## 2. Criar serviço com Atendente
+## 3. Testar erros de autorização (sem token, sem permissão)
+## 4. Testar erros de validação (nome duplicado, valores inválidos)
+## 5. Listar e filtrar por nome e ativo
+## 6. Buscar por id
+## 7. Atualizar
+## 8. Desativar → listar ativo=false
+## 9. Ativar → listar ativo=true
+## ============================================================
+
+
+### [1] Criar serviço — com token Administrador (deve conseguir — 201)
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{{{tokenAdmin}}}}
+
+{
+    "nome": "Troca de oleo",
+    "descricao": "Substituicao do oleo do motor e filtro de oleo",
+    "valor_base": 120.00,
+    "tempo_medio_minutos": 45
+}
+
+
+### [2] Criar serviço — com token Atendente (deve conseguir — 201)
+## Usar nome diferente para evitar conflito de unicidade
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Alinhamento",
+    "descricao": "Alinhamento da direcao e geometria do veiculo",
+    "valor_base": 150.00,
+    "tempo_medio_minutos": 60
+}
+
+
+### [3] Criar serviço — sem autenticação (deve falhar — 401)
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+
+{
+    "nome": "Polimento",
+    "descricao": "Limpeza e polimento da pintura para remover riscos e restaurar brilho",
+    "valor_base": 100.00,
+    "tempo_medio_minutos": 30
+}
+
+
+### [4] Criar serviço — com usuário sem permissão (deve falhar — 403)
+## Usar token de perfil Mecanico ou outro sem permissão de Administrador/Atendente
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "nome": "Troca de pneu",
+    "descricao": "pneus furados ou gastos, substituicao por pneus novos",
+    "valor_base": 100.00,
+    "tempo_medio_minutos": 30
+}
+
+
+### [5] Criar serviço — nome duplicado (deve falhar — 409)
+## Usa o mesmo nome do serviço criado no passo [1]
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca de oleo",
+    "descricao": "Nome ja cadastrado anteriormente",
+    "valor_base": 110.00,
+    "tempo_medio_minutos": 40
+}
+
+
+### [6] Criar serviço — nome vazio (deve falhar — 400 ou 422)
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "",
+    "descricao": "Nome vazio",
+    "valor_base": 100.00,
+    "tempo_medio_minutos": 30
+}
+
+
+### [7] Criar serviço — valor_base negativo (deve falhar — 400)
+## Regra de domínio: valor_base deve ser >= 0
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Servico Valor Negativo",
+    "descricao": "Valor base invalido",
+    "valor_base": -50.00,
+    "tempo_medio_minutos": 30
+}
+
+
+### [8] Criar serviço — tempo_medio_minutos igual a zero (deve falhar — 400)
+## Regra de domínio: tempo_medio_minutos deve ser > 0
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Servico Tempo Zero",
+    "descricao": "Tempo medio invalido",
+    "valor_base": 100.00,
+    "tempo_medio_minutos": 0
+}
+
+
+### [9] Criar serviço — tempo_medio_minutos negativo (deve falhar — 400)
+## Regra de domínio: tempo_medio_minutos deve ser > 0
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Servico Tempo Negativo",
+    "descricao": "Tempo medio negativo invalido",
+    "valor_base": 100.00,
+    "tempo_medio_minutos": -10
+}
+
+
+### [10] Listar todos os serviços
+GET {{baseUrl}}/api/v1/servicos HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [11] Listar serviços filtrando por nome (busca parcial, case-insensitive)
+GET {{baseUrl}}/api/v1/servicos?nome=oleo HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [12] Listar serviços filtrando por ativo=true
+GET {{baseUrl}}/api/v1/servicos?ativo=true HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [13] Listar serviços filtrando por ativo=false
+GET {{baseUrl}}/api/v1/servicos?ativo=false HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [14] Buscar serviço por ID
+## Substituir @servicoId pelo id copiado da resposta de criação ou listagem
+GET {{baseUrl}}/api/v1/servicos/{{servicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [15] Atualizar serviço (PATCH — campos não enviados são preservados)
+PATCH {{baseUrl}}/api/v1/servicos/{{servicoId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca de oleo e filtro",
+    "descricao": "Substituicao completa do oleo do motor, filtro de oleo e filtro de ar",
+    "valor_base": 135.00,
+    "tempo_medio_minutos": 50
+}
+
+
+### [16] Desativar serviço (soft delete — não remove do banco)
+PATCH {{baseUrl}}/api/v1/servicos/{{servicoId}}/desativar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [17] Listar serviços com ativo=false — confirmar que serviço desativado aparece
+GET {{baseUrl}}/api/v1/servicos?ativo=false HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [18] Ativar serviço novamente
+PATCH {{baseUrl}}/api/v1/servicos/{{servicoId}}/ativar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [19] Listar serviços com ativo=true — confirmar que serviço voltou a aparecer
+GET {{baseUrl}}/api/v1/servicos?ativo=true HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [20] Criar serviço adicional — Diagnóstico eletrônico (opcional, para volume de dados)
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Diagnostico eletronico",
+    "descricao": "Leitura de falhas e diagnostico via scanner automotivo",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 50
+}

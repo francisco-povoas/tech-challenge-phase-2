@@ -31,7 +31,7 @@ services:
     command: >
       sh -c "alembic upgrade head &&
              python scripts/seed_admin.py &&
-             pytest -p no:cacheprovider tests/integration/iam tests/integration/clientes tests/integration/veiculos tests/integration/servicos -v --tb=short"
+             pytest -p no:cacheprovider tests/integration/iam tests/integration/clientes tests/integration/veiculos tests/integration/servicos tests/integration/estoque -v --tb=short"
     volumes:
       - ./python-clean-architecture:/app
     depends_on:

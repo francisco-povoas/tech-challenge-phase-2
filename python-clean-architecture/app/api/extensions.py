@@ -1,4 +1,5 @@
-from typing import Dict
+import json
+from typing import Any, Dict
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
@@ -16,6 +17,19 @@ def _adapt_message(error: Dict[str, str]) -> str:
     return msg
 
 
+def _to_json_safe(value: Any) -> Any:
+    """Converte recursivamente valores não-serializáveis em string."""
+    if isinstance(value, dict):
+        return {k: _to_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_json_safe(item) for item in value]
+    try:
+        json.dumps(value)
+        return value
+    except TypeError:
+        return str(value)
+
+
 async def validation_exception_handler(
     _: Request, exc: RequestValidationError
 ) -> JSONResponse:
@@ -23,7 +37,7 @@ async def validation_exception_handler(
     for error in exc.errors():
         error.update({"msg": _adapt_message(error)})
         errors.append(error)
-    return JSONResponse({"detail": errors}, status_code=422)
+    return JSONResponse({"detail": _to_json_safe(errors)}, status_code=422)
 
 
 # Assegura que erros nao tratados sejam convertidos em respostas JSON genéricas, sem vazar detalhes do erro ou dados de entrada.

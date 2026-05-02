@@ -1,0 +1,172 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram name="Page-1" id="xaJam1gDXTiVqKE5lApf">
+    <mxGraphModel dx="3183" dy="2337" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="94jFwH0VcXbuac20HN5W-392" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="677.5" width="151" x="1300" y="596.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-393" parent="94jFwH0VcXbuac20HN5W-392" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#eae847;rotation=90;" value="" vertex="1">
+          <mxGeometry height="151" width="677.5" x="-263.25" y="263.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-394" parent="94jFwH0VcXbuac20HN5W-392" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;rotation=90;" value="&lt;font style=&quot;font-size: 28px;&quot;&gt;&lt;b&gt;CLIENTE&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="19" width="135" x="8" y="268.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-395" edge="1" parent="94jFwH0VcXbuac20HN5W-392" source="94jFwH0VcXbuac20HN5W-394" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;fontSize=12;startSize=8;endSize=8;" target="94jFwH0VcXbuac20HN5W-394">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-396" parent="94jFwH0VcXbuac20HN5W-392" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="AG" vertex="1">
+          <mxGeometry height="30" width="60" y="3.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-397" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="123" width="130" x="940" y="635.5" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-398" parent="94jFwH0VcXbuac20HN5W-397" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FEE750;strokeColor=none;fontSize=18;fontStyle=0;rotation=0;shadow=1;" value="Atendente" vertex="1">
+          <mxGeometry height="120" width="120" x="10" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-399" parent="94jFwH0VcXbuac20HN5W-397" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="AT" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-400" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="120" width="120" x="1150" y="638.5" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-401" parent="94jFwH0VcXbuac20HN5W-400" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#a7c5fc;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Localiza Cliente por CPF ou CNPJ" vertex="1">
+          <mxGeometry height="120" width="120" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-402" parent="94jFwH0VcXbuac20HN5W-400" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="CMD" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-403" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#feae57;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;Cliente não foi identificado&lt;/font&gt;" vertex="1">
+          <mxGeometry height="120" width="120" x="1510" y="635.5" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-404" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="178.75" width="170" x="1630" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-405" parent="94jFwH0VcXbuac20HN5W-404" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#da99e6;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Cliente&amp;nbsp; não foi encontrado, para prosseguir com a OS deve ser cadastrado no sistema" vertex="1">
+          <mxGeometry height="178.75" width="170" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-406" parent="94jFwH0VcXbuac20HN5W-404" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="POL" vertex="1">
+          <mxGeometry height="44.6875" width="85" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-407" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="677.5" width="151" x="2620" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-408" parent="94jFwH0VcXbuac20HN5W-407" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#eae847;rotation=90;" value="" vertex="1">
+          <mxGeometry height="151" width="677.5" x="-263.25" y="263.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-409" parent="94jFwH0VcXbuac20HN5W-407" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;rotation=90;" value="&lt;font style=&quot;font-size: 28px;&quot;&gt;&lt;b&gt;VEÍCULO&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="19" width="135" x="8" y="268.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-410" edge="1" parent="94jFwH0VcXbuac20HN5W-407" source="94jFwH0VcXbuac20HN5W-409" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;fontSize=12;startSize=8;endSize=8;" target="94jFwH0VcXbuac20HN5W-409">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-411" parent="94jFwH0VcXbuac20HN5W-407" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="AG" vertex="1">
+          <mxGeometry height="30" width="60" y="3.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-412" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="123" width="130" x="2260" y="629.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-413" parent="94jFwH0VcXbuac20HN5W-412" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FEE750;strokeColor=none;fontSize=18;fontStyle=0;rotation=0;shadow=1;" value="Atendente" vertex="1">
+          <mxGeometry height="120" width="120" x="10" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-414" parent="94jFwH0VcXbuac20HN5W-412" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="AT" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-415" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="120" width="120" x="2470" y="632.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-416" parent="94jFwH0VcXbuac20HN5W-415" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#a7c5fc;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Localiza Veículo pela placa" vertex="1">
+          <mxGeometry height="120" width="120" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-417" parent="94jFwH0VcXbuac20HN5W-415" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="CMD" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-418" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#feae57;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="&lt;span style=&quot;font-size: 14px;&quot;&gt;Veículo não foi identificado&lt;/span&gt;" vertex="1">
+          <mxGeometry height="120" width="120" x="2830" y="629.25" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-419" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="178.75" width="170" x="2950" y="850.6300000000001" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-420" parent="94jFwH0VcXbuac20HN5W-419" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#da99e6;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Em posse da identificação do Veículo no Sistema, prossegue com a criação da OS" vertex="1">
+          <mxGeometry height="178.75" width="170" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-421" parent="94jFwH0VcXbuac20HN5W-419" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="POL" vertex="1">
+          <mxGeometry height="44.6875" width="85" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-422" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#feae57;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;Cliente foi cadastrado&lt;/font&gt;" vertex="1">
+          <mxGeometry height="120" width="120" x="1510" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-423" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;EV&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="1510" y="638.5" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-424" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;EV&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="1510" y="870.5" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-425" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="123" width="130" x="940" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-426" parent="94jFwH0VcXbuac20HN5W-425" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FEE750;strokeColor=none;fontSize=18;fontStyle=0;rotation=0;shadow=1;" value="Atendente" vertex="1">
+          <mxGeometry height="120" width="120" x="10" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-427" parent="94jFwH0VcXbuac20HN5W-425" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="AT" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-428" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="120" width="120" x="1150" y="863" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-429" parent="94jFwH0VcXbuac20HN5W-428" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#a7c5fc;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Realiza cadastro" vertex="1">
+          <mxGeometry height="120" width="120" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-430" parent="94jFwH0VcXbuac20HN5W-428" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="CMD" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-431" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="230" width="170" x="1630" y="840" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-432" parent="94jFwH0VcXbuac20HN5W-431" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#da99e6;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Em posse da identificação do cliente no Sistema, inicia identificação do veículo" vertex="1">
+          <mxGeometry height="230" width="170" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-433" parent="94jFwH0VcXbuac20HN5W-431" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="POL" vertex="1">
+          <mxGeometry height="57.5" width="85" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-434" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="123" width="130" x="2260" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-435" parent="94jFwH0VcXbuac20HN5W-434" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FEE750;strokeColor=none;fontSize=18;fontStyle=0;rotation=0;shadow=1;" value="Atendente" vertex="1">
+          <mxGeometry height="120" width="120" x="10" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-436" parent="94jFwH0VcXbuac20HN5W-434" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="AT" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-437" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="120" width="120" x="2470" y="813" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-438" parent="94jFwH0VcXbuac20HN5W-437" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#a7c5fc;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Realiza cadastro" vertex="1">
+          <mxGeometry height="120" width="120" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-439" parent="94jFwH0VcXbuac20HN5W-437" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="CMD" vertex="1">
+          <mxGeometry height="30" width="60" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-440" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#feae57;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;Veículo foi cadastrado&lt;/font&gt;" vertex="1">
+          <mxGeometry height="120" width="120" x="2830" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-441" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;EV&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="2830" y="870.5" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-442" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="178.75" width="170" x="2950" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-443" parent="94jFwH0VcXbuac20HN5W-442" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#da99e6;strokeColor=none;fontSize=16;fontStyle=0;rotation=0;shadow=1;" value="Veículo não foi encontrado, para prosseguir com a OS deve ser cadastrado no sistema" vertex="1">
+          <mxGeometry height="178.75" width="170" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-444" parent="94jFwH0VcXbuac20HN5W-442" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="POL" vertex="1">
+          <mxGeometry height="44.6875" width="85" as="geometry" />
+        </mxCell>
+        <mxCell id="94jFwH0VcXbuac20HN5W-445" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;EV&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="2830" y="629.25" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

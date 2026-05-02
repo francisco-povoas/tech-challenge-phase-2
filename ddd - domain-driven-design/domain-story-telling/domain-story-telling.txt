@@ -1,0 +1,297 @@
+Historia 1 - DS01 Atendimento Inicial e Abertura da Ordem de Serviço:
+
+1 - Relata problema do veículo ao Atendente
+2 - Atendente identifica cpf/cnpj do cliente no Sistema
+3 - Atendente identifica veículo pela placa no Sistema
+4 - Atendente cadastra cliente se necessario no Sistema
+5 - Atendente cadastra veículo se necessario no Sistema
+6 - Atendente cria OS no Sistema
+7 - Atendente cadastra queixa inicial do cliente na OS no Sistema
+8 - Sistema registra OS RECEBIDA
+
+Historia 2 - DS02 Diagnóstico da Ordem de Serviço e Envio do Orçamento
+
+1 - Mecânico altera (OS RECEBIDA) para (OS EM DIAGNÓSTICO) no Sistema
+2 - Mecânico insere (diagnóstico da OS, serviços, peças e insumos necessários) na (OS EM DIAGNÓSTICO) no Sistema
+3 - Mecânico conclui (OS EM DIAGNÓSTICO) no Sistema
+4 - Sistema altera (OS EM DIAGNÓSTICO) para (OS DIAGNÓSTICO CONCLUIDO)
+5 - Atendente verifica disponibilidade itens no Estoque de peças e insumos
+6 - Atendente reserva itens no Estoque de insumos/peças
+7 - Atendente gera Orçamento
+8 - Atendente anexa Orçamento na (OS DIAGNÓSTICO CONCLUIDO)
+9 - Atendente altera (OS DIAGNÓSTICO CONCLUIDO) para (OS AGUARDANDO APROVAÇÃO)
+10 - Sistema notifica Orçamento da OS ao Cliente
+
+Historia 2 - DS02 Diagnóstico da Ordem de Serviço e Envio do Orçamento (item(s) não encontrado(s) em estoque)
+
+1 - Mecânico altera (OS RECEBIDA) para (OS EM DIAGNÓSTICO) no Sistema
+2 - Mecânico insere (diagnóstico da OS, serviços, peças e insumos necessários) na (OS EM DIAGNÓSTICO) no Sistema
+3 - Mecânico conclui (OS EM DIAGNÓSTICO) no Sistema
+4 - Sistema altera (OS EM DIAGNÓSTICO) para (OS DIAGNÓSTICO CONCLUIDO)
+5 - Atendente verifica disponibilidade itens no Estoque de peças e insumos (item(s) não encontrado(s))
+6 - Atendente gera Orçamento
+7 - Atendente anexa Orçamento na (OS DIAGNÓSTICO CONCLUIDO)
+8 - Atendente altera (OS DIAGNÓSTICO CONCLUIDO) para (OS AGUARDANDO APROVAÇÃO)
+10 - Sistema notifica Orçamento da OS ao Cliente
+
+
+
+Historia 3 - DS03 Fluxo da OS aprovada até a finalização
+
+1 - Cliente informa aprovação de todos serviços do orçamento da OS Ao Atendente
+2 - Atendente atualiza (OS AGUARDANDO APROVAÇÃO) para (OS APROVADA) no Sistema
+3 - Mecânico altera item(s) RESERVADO(S) para item(s) EM USO no Estoque de peças e insumos
+4 - Mecânico altera (OS APROVADA) para (OS EXECUÇÃO) no Sistema.
+4 - Mecânico insere tempo gasto por serviço na (OS EM EXECUÇÃO) no Sistema
+5 - Altera (OS EM EXECUÇÃO) para (OS FINALIZADA) no Sistema
+
+
+Historia 3 - DS03b Fluxo da OS negada até encerrada
+
+1 - Cliente informa negação dos serviços do orçamento da OS Ao Atendente
+2 - Atendente atualiza (OS AGUARDANDO APROVAÇÃO) para (OS ENCERRADA) no Sistema
+3 - Atendente altera item (RESERVADO) para (EM ESTOQUE) no Estoque de peças e insumos
+
+Historia 3 - DS03c Fluxo da OS aprovada até a finalização (solicitação de itens)
+
+1 - Cliente informa aprovação de todos serviços do orçamento da OS Ao Atendente
+2 - Atendente solicita item(s) ao fornecedor externo
+3 - Atendente altera (OS AGUARDANDO APROVAÇÃO) PARA (OS AGUARDANDO itens)
+4 - Atendente registra (item(s) A RECEBER) no Estoque de peças e insumos
+5 - fornecedor entrega item(s) ao Atendente
+6 - Atendente altera item(s) A RECEBER para item(s) RESERVADO(S) no Estoque de peças e insumos
+7 - Atendente altera OS (AGUARDANDO ITENS) para (OS APROVADA)
+8 - Mecânico altera (item(s) RESERVADO(S)) para (item(s) EM USO) no Estoque de peças e insumos
+9 - Mecânico altera (OS APROVADA) para (OS EM EXECUÇÃO)
+10 - Mecânico registra (tempo gasto por serviço) na ((OS EM EXECUÇÃO))
+11 - Mecânico altera (OS EM EXECUÇÃO) para (OS FINALIZADA)
+
+
+Historia 4 - DS04 Entrega do veículo após finalização da OS
+
+1 - Sistema notifica (OS FINALIZADA) para Cliente
+2 - Cliente realiza pagamento ao Atendente
+3 - Atendente altera (OS FINALIZADA) para (OS ENTREGUE) no Sistema
+4 - Sistema altera item(s) EM USO para item(s) CONSUMIDO no Estoque de peças e insumos
+5 - Cliente retira Carro.
+
+
+Historias contadas através:
+
+1 - Havia item no estoque, os aprovada e OS executada com sucesso.
+DS01
+DS02 item em estoque
+DS03
+DS04 
+
+2 - Havia item no estoque, os negada OS não é executada
+DS01
+DS02 item em estoque
+DS03b (OS negada e fluxo encerrado)
+
+3 - 
+DS01
+DS02b (sem item no estoque)
+DS03C (solicitando item antes de aprovar OS)
+DS04
+
+
+DS01
+DS02B (sem item no estoque)
+DS03b (OS negada e fluxo encerrado)
+
+/*********************************/
+
+Status - OS - Ordem de Serviço
+
+RECEBIDA
+QUEM ALTERA PARA O STATUS? (Sistema)
+Quando? Após OS receber "queixa"
+Historia? DS01
+
+EM DIAGNÓSTICO
+QUEM ALTERA PARA O STATUS? (Mecânico)
+Quando? Após sistema marcar OS como recebida em DS01
+Historia? DS02
+
+DIAGNÓSTICO CONCLUIDO
+QUEM ALTERA PARA O STATUS? (Sistema)
+Quando? Após Mecânico concluir OS no sistema
+Historia? DS02
+
+AGUARDANDO APROVAÇÃO
+QUEM ALTERA PARA O STATUS? (Atendente)
+Quando? Após atendente inserir orçamento na OS
+Historia? DS02
+
+ENCERRADA
+QUEM ALTERA PARA O STATUS? (Atendente)
+Quando? Após receber negação do cliente referente ao orçamento
+Historia? DS03B
+
+AGUARDANDO ITENS
+QUEM ALTERA PARA O STATUS? (Atendente)
+Quando? Após atendente realizar pedidos de itens para o fornecedor
+Historia? DS03C
+
+APROVADA
+QUEM ALTERA? (Atendente)
+Quando? Após cliente confirmar serviços do orçamento
+Historia? DS03 DS03C
+
+ENCERRADA
+QUEM ALTERA? (Atendente)
+Quando? Após cliente negar serviços do orçamento
+Historia? DS03B
+
+EM EXECUÇÃO
+QUEM ALTERA? (Mecanico)
+Quando? Quando inicia serviço. 
+Historia? DS03 DS03C
+
+FINALIZADA
+QUEM ALTERA? (Mecanico)
+Quando? Quando finaliza serviço
+Historia? DS03 DS03C
+
+ENTREGUE
+QUEM ALTERA? (Atendente)
+Quando? Após pagamento do cliente
+Historia? DS04
+
+
+RECEBIDA:
+OS criada e com a queixa inicial do cliente registrada, aguardando início do diagnóstico.
+
+EM DIAGNÓSTICO
+OS em análise pelo mecânico, que está identificando os serviços, peças e insumos necessários.
+
+DIAGNÓSTICO CONCLUIDO
+Diagnóstico encerrado pelo mecânico. OS aguardando geração e envio do orçamento ao cliente.
+
+AGUARDANDO APROVAÇÃO
+Orçamento gerado e enviado ao cliente. OS aguardando retorno com aprovação ou negação dos serviços.
+
+AGUARDANDO ITENS
+Cliente aprovou o orçamento, porém um ou mais itens necessários foram solicitados a fornecedor externo e ainda não foram recebidos.
+
+APROVADA
+Cliente confirmou os serviços do orçamento e todos os itens necessários estão reservados. OS pronta para execução.
+
+EM EXECUÇÃO
+Serviços em andamento pelo mecânico.
+
+FINALIZADA
+Todos os serviços foram concluídos pelo mecânico. OS aguardando retirada e pagamento pelo cliente.
+
+ENTREGUE
+Pagamento realizado e veículo entregue ao cliente. OS encerrada com sucesso.
+
+ENCERRADA
+Cliente negou o orçamento. OS encerrada sem execução dos serviços.
+
+3 possíveis histórias de OS:
+
+1 - Fluxo "positivo" Orçamento aprovado e não precisou solicitar peças.
+RECEBIDA
+EM DIAGNÓSTICO
+DIAGNÓSTICO CONCLUIDO
+AGUARDANDO APROVAÇÃO
+APROVADA
+EM EXECUÇÃO
+FINALIZADA
+ENTREGUE
+
+2 - Fluxo "negativo" Orçamento não foi aprovado.
+RECEBIDA
+EM DIAGNÓSTICO
+DIAGNÓSTICO CONCLUIDO
+AGUARDANDO APROVAÇÃO
+ENCERRADA
+
+3 - Fluxo "positivo" Foi preciso solicitar peças ao fornecedor externo.
+RECEBIDA
+EM DIAGNÓSTICO
+DIAGNÓSTICO CONCLUIDO
+AGUARDANDO APROVAÇÃO
+AGUARDANDO ITENS
+APROVADA
+EM EXECUÇÃO
+FINALIZADA
+ENTREGUE
+
+
+
+/*********************************/
+
+Status - item no estoque
+
+EM ESTOQUE
+QUEM ALTERA PARA O STATUS? (Sistema)
+Quando? apos Atendente/Mecanico incluir item no estoque
+Historia? DS05? Nao criado.
+
+RESERVADO
+QUEM ALTERA PARA O STATUS? Atendente
+Quando? dois possiveis momentos:
+1 - Na verificação de disponibilidade previo ao orçamento, quando é encontrado em estoque.
+2 - Após peça ser recebida do fornecedor externo.
+Historia? DS02 e DS03C
+
+
+A RECEBER
+QUEM ALTERA PARA O STATUS? Atendente/Sistema
+Quando? apos Atendente Encomendar peça e registrar no sistema.
+Historia? DS03C
+
+
+EM USO
+QUEM ALTERA PARA O STATUS? Mecânico
+Quando? após OS passar para APROVADA pelo atendente
+Historia? DS03 e DS03C
+
+CONSUMIDO
+QUEM ALTERA PARA O STATUS? Sistema
+Quando? após OS ser passada para entregue
+Historia? DS04
+
+
+EM ESTOQUE
+Item disponível fisicamente e livre para reserva ou uso.
+
+RESERVADO
+Item separado para uma OS específica, mas ainda não aplicado.
+
+EM USO
+Item já liberado para execução da OS, em processo de aplicação/consumo.
+
+CONSUMIDO
+Item já consumido, após OS entregue
+
+3 possíveis histórias de item no Estoque de peças e insumos:
+
+1 - Fluxo "positivo" OS foi executada sem solicitar fornecedor.
+EM ESTOQUE
+RESERVADO
+EM USO
+CONSUMIDO
+
+2 - Fluxo "positivo" item nao constava em estoque e foi preciso solicitar ao fornecedor
+A RECEBER
+RESERVADO
+EM USO
+CONSUMIDO
+
+3 - Fluxo "negativo" item constava em estoque mas cliente negou orçamento. Item volta para EM ESTOQUE
+EM ESTOQUE
+RESERVADO
+EM ESTOQUE
+
+
+/**********************************************/
+
+
+Item pode ser criado no estoque com dois status:
+A RECEBER (aguardando recebimento pelo fornecedor)
+EM ESTOQUE (ja em loja e constando no estoque)
+

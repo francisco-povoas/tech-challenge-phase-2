@@ -1,0 +1,115 @@
+cliente 1:N veiculo
+cliente 1:N os
+veiculo 1:N os
+usuario 1:N os como atendente
+usuario 1:N os como mecânico
+usuario N:N perfil via usuario_perfil
+os 1:N orcamento
+orcamento 1:N orcamento_servico
+orcamento 1:N orcamento_item
+os 1:N os_servico
+os 1:N os_item
+os 1:N os_historico_status
+catalogo_servico 1:N orcamento_servico
+catalogo_servico 1:N os_servico
+item_estoque 1:N orcamento_item
+item_estoque 1:N os_item
+item_estoque 1:N movimentacao_estoque
+os_item 1:N movimentacao_estoque
+os 1:N movimentacao_estoque
+usuario 1:N movimentacao_estoque opcional
+usuario 1:N os_historico_status opcional
+
+
+
+Tabela cliente
+PK id UUID NOT NULL
+tipo_pessoa char(2) not null - valores PF, PJ
+nome_razao_social varchar(150) NOT NULL
+cpf_cnpj char (14) NOT NULL - UNIQUE
+telefone varchar (20) NOT NULL
+email varchar (150)  NULL
+cep varchar (8)  NULL
+logradouro varchar(150)  NULL
+numero varchar(20)  NULL
+complemento varchar(100)  NULL
+bairro varchar(100)  NULL
+cidade varchar(100)  NULL
+uf char(2)  NULL
+ativo BOOLEAN  NOT NULL default TRUE
+criado_em TIMESTAMP  NOT NULL
+atualizado_em TIMESTAMP  NOT NULL
+CHECK (tipo_pessoa IN ('PF', 'PJ'))
+
+
+Tabela veiculo
+PK id UUID NOT NULL
+FK cliente_id UUID NOT NULL
+placa varchar(10) NOT NULL - UNIQUE
+marca varchar (60) NOT NULL
+modelo varchar (60) NOT NULL
+ano_fabricacao  SMALLINT  NULL
+ano_modelo SMALLINT NULL
+cor varchar(30)  NULL
+criado_em TIMESTAMP  NOT NULL
+atualizado_em TIMESTAMP  NOT NULL
+
+
+
+Tabela usuario
+
+PK id UUID NOT NULL
+nome varchar(120) NOT NULL
+email varchar(150) NOT NULL - UNIQUE
+senha_hash varchar(255) NOT NULL
+ativo BOOLEAN NOT NULL DEFAULT TRUE
+criado_em TIMESTAMP NOT NULL
+atualizado_em TIMESTAMP NOT NULL
+
+Tabela perfil
+PK id UUID NOT NULL
+nome varchar(30) NOT NULL - UNIQUE
+descricao varchar(150) NOT NULL
+ativo BOOLEAN NOT NULL DEFAULT TRUE
+criado_em TIMESTAMP NOT NULL
+atualizado_em TIMESTAMP NOT NULL
+
+Tabela usuario_perfil
+PK id UUID NOT NULL
+FK usuario_id UUID NOT NULL
+FK perfil_id UUID NOT NULL
+criado_em TIMESTAMP NOT NULL
+UNIQUE(usuario_id, perfil_id)
+
+Tabela catalogo_servico
+
+PK id UUID NOT NULL
+codigo varchar(30) NULL - UNIQUE
+nome varchar(100) NOT NULL
+descricao varchar(255) NULL
+tempo_medio_minutos smallint NOT NULL
+valor_base numeric(10,2) NOT NULL
+ativo BOOLEAN NOT NULL DEFAULT TRUE
+criado_em TIMESTAMP NOT NULL
+atualizado_em TIMESTAMP NOT NULL
+CHECK (tempo_medio_minutos > 0)
+CHECK (valor_base >= 0)
+
+item_estoque
+- id UUID NOT NULL PRIMARY KEY
+- tipo VARCHAR(10) NOT NULL
+- nome VARCHAR(100) NOT NULL
+- descricao VARCHAR(255) NULL
+- codigo VARCHAR(50) NULL UNIQUE
+- quantidade_disponivel INTEGER NOT NULL DEFAULT 0
+- quantidade_reservada INTEGER NOT NULL DEFAULT 0
+- quantidade_minima INTEGER NOT NULL DEFAULT 0
+- valor_unitario NUMERIC(10,2) NOT NULL
+- ativo BOOLEAN NOT NULL DEFAULT TRUE
+- criado_em TIMESTAMP NOT NULL
+- atualizado_em TIMESTAMP NOT NULL
+
+
+
+
+

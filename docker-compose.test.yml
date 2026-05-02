@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: "no"
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app_test}
+    ports:
+      - "5437:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app_test}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.test
+    working_dir: /app
+    environment:
+      DB_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
+    command: >
+      sh -c "alembic upgrade head &&
+             python scripts/seed_admin.py &&
+             pytest -p no:cacheprovider tests/integration/iam tests/integration/clientes tests/integration/veiculos -v --tb=short"
+    volumes:
+      - ./python-clean-architecture:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"

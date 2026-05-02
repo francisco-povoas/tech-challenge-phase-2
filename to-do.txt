@@ -1,0 +1,8 @@
+ARQTODO
+
+1 - Implementar atualizacao de senha e status ativo/inativo para entidade usuario.
+2 -  Subir a cobertura de teste unitario da entidade Usuario
+
+
+
+

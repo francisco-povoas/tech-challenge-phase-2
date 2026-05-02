@@ -27,3 +27,7 @@ class ItemEstoqueRepo(Protocol):
     async def listar(self, filtros: ListarItensEstoqueFiltro) -> list[ItemEstoque]:
         """Lista itens de estoque aplicando filtros opcionais."""
         ...
+
+    async def obter_por_id_com_lock(self, _id: ID) -> Optional[ItemEstoque]:
+        """Retorna o item com lock pessimista (SELECT ... FOR UPDATE) para operações transacionais."""
+        ...

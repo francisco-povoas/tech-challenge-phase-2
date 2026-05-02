@@ -18,6 +18,7 @@ from app.modules.clientes.infrastructure.db.models.cliente import ClienteModel  
 from app.modules.veiculos.infrastructure.db.models.veiculo import VeiculoModel  # noqa: F401
 from app.modules.servicos.infrastructure.db.models.servico import ServicoModel  # noqa: F401
 from app.modules.estoque.infrastructure.db.models.item_estoque import ItemEstoqueModel  # noqa: F401
+from app.modules.ordens_servico.infrastructure.db.models import OrdemServicoModel, OrdemServicoServicoModel, OrdemServicoItemModel  # noqa: F401
 
 config = context.config
 

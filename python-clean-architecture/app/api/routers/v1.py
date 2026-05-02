@@ -5,6 +5,7 @@ from app.modules.veiculos.presentation.routers import veiculo
 from app.modules.clientes.presentation.routers import cliente
 from app.modules.servicos.presentation.routers import servico
 from app.modules.estoque.presentation.routers import item_estoque
+from app.modules.ordens_servico.presentation.routers import ordem_servico
 
 router = APIRouter()
 router.include_router(auth.router, prefix="/auth", tags=["Auth"])
@@ -13,3 +14,4 @@ router.include_router(veiculo.router, prefix="/veiculos", tags=["Veículos"])
 router.include_router(cliente.router, prefix="/clientes", tags=["Clientes"])
 router.include_router(servico.router, prefix="/servicos", tags=["Serviços"])
 router.include_router(item_estoque.router, prefix="/itens-estoque", tags=["Itens de Estoque"])
+router.include_router(ordem_servico.router, prefix="/ordens-servico", tags=["Ordens de Serviço"])

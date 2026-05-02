@@ -1,0 +1,574 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Execute as requisições de login abaixo e copie o valor de "access_token"
+## para as variáveis correspondentes.
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmVhYmQ1Yi0xYmVjLTQ4Y2QtOWI2Zi1hNmNmM2VmYWZmNTQiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc3NjIzNTh9.330bgygvGNNwUwRuogXWvUtfypumVqHxqkSSvDGofeg
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MjA2NmFmMi1iOTIxLTQ0ZTItOTg1YS05MGE5NThiMWYxODYiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3Nzc2MjM4N30.OwfiXthze8eXgp0B-kQSKvp0ush_IXjwKuJe-exbg-U
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZTBjMzg5My1kMWM2LTQ3Y2YtODM2OC0yYjE2MmVmOGQ2NmEiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3NzYyNDE4fQ.V6Bgmas1xh60SWcYVLwqhTR31hf--bWm37LDih2KF98
+
+## IDs das entidades — preencher após cada criação
+## Copiar o valor de "id" retornado na resposta de cada criação.
+
+@clienteId = 24de0254-8496-4c53-a11e-000827fd1e5a
+@clienteOutroId = de8adf26-68b9-4f66-a77e-4ccaf6758f0a
+@veiculoId = a23d32cf-fdac-41ac-8a9f-9952dba5d813
+@veiculoOutroClienteId =
+@servicoId = 95f18a1d-2ec9-47f2-a70f-aa5d13f2e6d4
+@itemComSaldoId = fca1f229-a1e4-441d-ae8b-10a9c3a0cf75
+@itemSemSaldoId = 8fb89d9a-d389-4d01-9154-0129ad5531a9
+
+@ordemServicoId = 55828f18-7c74-47fa-aaee-7bbe69e5c808
+@ordemServicoServicoId = 80e2a8a6-0b81-490d-a6b8-aec1e6e91386
+@ordemServicoItemReservadoId = 5c242765-ab39-44e4-8fba-9bff1891d094
+
+
+@ordemServicoItemAReceberId = 42921aaa-2aec-46c8-8221-b96405ccd051
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA DE TESTES
+##
+##  [PREPARAÇÃO]
+##  1.  Login admin
+##  2.  Criar usuário Atendente
+##  3.  Login Atendente
+##  4.  Criar usuário Mecânico
+##  5.  Login Mecânico
+##  6.  Criar cliente
+##  7.  Criar veículo para o cliente
+##  8.  Criar serviço
+##  9.  Criar item de estoque COM saldo
+##  10. Criar item de estoque SEM saldo
+##
+##  [FLUXO FELIZ — OS até DIAGNOSTICO_CONCLUIDO]
+##  11. Criar OS                               → status RECEBIDA
+##  12. Listar OS
+##  13. Detalhar OS
+##  14. Iniciar diagnóstico                    → status EM_DIAGNOSTICO
+##  15. Registrar diagnóstico
+##  16. Adicionar serviço à OS
+##  17. Adicionar item COM saldo               → RESERVADO
+##  18. Consultar estoque após reserva
+##  19. Adicionar item SEM saldo               → A_RECEBER
+##  20. Consultar estoque após tentativa
+##  21. Detalhar OS (com serviço + 2 itens)
+##  22. Remover item RESERVADO                 → devolve estoque
+##  23. Consultar estoque após devolução
+##  24. Adicionar item COM saldo novamente
+##  25. Concluir diagnóstico                   → status DIAGNOSTICO_CONCLUIDO
+##  26. Detalhar OS final
+##
+##  [CENÁRIOS NEGATIVOS]
+##  27. Criar OS sem autenticação              → 401
+##  28. Criar OS com veículo de outro cliente  → 422
+##  29. Iniciar diagnóstico como Atendente     → 403
+##  30. Adicionar serviço em OS RECEBIDA       → 422
+##  31. Concluir diagnóstico sem serviço       → 422
+##  32. Adicionar item com quantidade zero     → 422
+## ============================================================
+
+
+## ============================================================
+## PREPARAÇÃO — autenticação e dados de suporte
+## ============================================================
+
+### [1] Login admin
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@example.com&password=admin123
+
+## ► Copiar "access_token" para @tokenAdmin
+
+
+### [2] Criar usuário Atendente
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Ana Atendente",
+    "email": "ana.atendente@example.com",
+    "senha": "senha123",
+    "perfis": ["Atendente"]
+}
+
+
+### [3] Login Atendente
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=ana.atendente@example.com&password=senha123
+
+## ► Copiar "access_token" para @tokenAtendente
+
+
+### [4] Criar usuário Mecânico
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Bruno Mecanico",
+    "email": "bruno.mecanico@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
+}
+
+
+### [5] Login Mecânico
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=bruno.mecanico@example.com&password=senha123
+
+## ► Copiar "access_token" para @tokenMecanico
+
+
+### [6] Criar cliente
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Carlos Eduardo Santos",
+    "cpf_cnpj": "52998224725",
+    "telefone": "11987654321",
+    "email": "carlos.santos@example.com",
+    "cep": "01001000",
+    "logradouro": "Praca da Se",
+    "numero": "10",
+    "complemento": null,
+    "bairro": "Se",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+## ► Copiar "id" para @clienteId
+
+
+### [7] Criar veículo para o cliente
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "BRA2E19",
+    "marca": "Toyota",
+    "modelo": "Corolla",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2022,
+    "cor": "Prata"
+}
+
+## ► Copiar "id" para @veiculoId
+
+
+### [8] Criar serviço
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca de pastilha de freio",
+    "descricao": "Substituicao das pastilhas dianteiras desgastadas",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 60
+}
+
+## ► Copiar "id" para @servicoId
+
+
+### [9] Criar item de estoque COM saldo suficiente
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Pastilha de freio dianteira",
+    "descricao": "Pastilha original para eixo dianteiro",
+    "codigo": "PFD-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 2,
+    "valor_unitario": 85.00
+}
+
+## ► Copiar "id" para @itemComSaldoId
+
+
+### [10] Criar item de estoque SEM saldo
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Disco de freio dianteiro",
+    "descricao": "Disco ventilado para eixo dianteiro",
+    "codigo": "DFD-001",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 220.00
+}
+
+## ► Copiar "id" para @itemSemSaldoId
+
+
+## ============================================================
+## FLUXO FELIZ — OS até DIAGNOSTICO_CONCLUIDO
+## ============================================================
+
+### [11] Criar OS — Atendente abre OS com queixa inicial
+## Esperado: 201 — status RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "Cliente relata ruido ao frear, especialmente ao desacelerar em alta velocidade."
+}
+
+## ► Copiar "id" para @ordemServicoId
+
+
+### [12] Listar OS
+## Esperado: 200 — lista com a OS recém-criada (status RECEBIDA)
+GET {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [12b] Listar OS filtrando por status
+GET {{baseUrl}}/api/v1/ordens-servico?status=RECEBIDA HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [12c] Listar OS filtrando por cliente
+GET {{baseUrl}}/api/v1/ordens-servico?cliente_id={{clienteId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [13] Detalhar OS
+## Esperado: 200 — status RECEBIDA, listas de serviços e itens vazias
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [14] Iniciar diagnóstico — Mecânico inicia o diagnóstico
+## Esperado: 200 — status EM_DIAGNOSTICO, iniciado_diagnostico_em preenchido
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+### [15] Registrar diagnóstico
+## Esperado: 200 — campo diagnostico preenchido, status permanece EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Pastilhas dianteiras desgastadas com aproximadamente 10% de espessura restante. Necessaria substituicao imediata. Discos apresentam leve riscado, recomenda-se avaliacao apos troca das pastilhas."
+}
+
+
+### [16] Adicionar serviço à OS
+## Esperado: 201 — vínculo criado com snapshot do serviço (nome, valor, tempo)
+##            cancelado: false
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoId}}",
+    "observacao": "Servico indicado apos diagnostico das pastilhas dianteiras."
+}
+
+## ► Copiar "id" para @ordemServicoServicoId
+
+
+### [17] Adicionar item COM saldo suficiente
+## Esperado: 201 — OrdemServicoItem.status = RESERVADO
+##            Estoque: quantidade_disponivel diminui 2, quantidade_reservada aumenta 2
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemComSaldoId}}",
+    "quantidade": 2
+}
+
+## ► Copiar "id" para @ordemServicoItemReservadoId
+
+
+### [18] Consultar item de estoque após reserva
+## Esperado: quantidade_disponivel = 8 (era 10), quantidade_reservada = 2 (era 0)
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemComSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [19] Adicionar item SEM saldo suficiente
+## Esperado: 201 — OrdemServicoItem.status = A_RECEBER
+##            Estoque: não muda (disponível permanece 0, reservado permanece 0)
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemSemSaldoId}}",
+    "quantidade": 1
+}
+
+## ► Copiar "id" para @ordemServicoItemAReceberId
+
+
+### [20] Consultar item de estoque sem saldo após tentativa
+## Esperado: quantidade_disponivel = 0, quantidade_reservada = 0 (sem alteração)
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemSemSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [21] Detalhar OS com serviço e itens
+## Esperado: 200 — status EM_DIAGNOSTICO
+##            diagnostico preenchido
+##            servicos: [ { cancelado: false, ... } ]
+##            itens: [ { status: "RESERVADO", ... }, { status: "A_RECEBER", ... } ]
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+### [22] Remover item RESERVADO da OS
+## Esperado: 204 — item marcado como CANCELADO
+##            Estoque: quantidade_disponivel aumenta 2 (volta a 10), quantidade_reservada diminui 2 (volta a 0)
+DELETE {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens/{{ordemServicoItemReservadoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+### [23] Consultar estoque após devolução de reserva
+## Esperado: quantidade_disponivel = 10 (restaurada), quantidade_reservada = 0
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemComSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+### [24] Adicionar item COM saldo novamente (para ter ao menos 1 item ativo na OS)
+## Esperado: 201 — status RESERVADO
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemComSaldoId}}",
+    "quantidade": 2
+}
+
+
+### [25] Concluir diagnóstico
+## Esperado: 200 — status DIAGNOSTICO_CONCLUIDO
+##            diagnostico_concluido_em preenchido
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+### [26] Detalhar OS após conclusão do diagnóstico
+## Esperado: 200 — status DIAGNOSTICO_CONCLUIDO
+##            todos os dados consolidados: queixa, diagnóstico, serviços, itens
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+## ============================================================
+## CENÁRIOS NEGATIVOS
+## ============================================================
+
+### [27] Criar OS sem autenticação
+## Esperado: 401 ou 403
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "Sem token, nao deve funcionar."
+}
+
+
+### [28] Criar OS com veículo de outro cliente
+## Preparação: criar um segundo cliente e tentar abrir OS com cliente A + veículo pertencente a B
+## Esperado: 422 — "O veículo informado não pertence ao cliente informado."
+
+# Passo 28a — criar segundo cliente
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Outro Cliente Teste",
+    "cpf_cnpj": "87748248800",
+    "telefone": "11911112222",
+    "email": "outro.cliente@example.com"
+}
+
+## ► Copiar "id" para @clienteOutroId
+
+###
+# Passo 28b — abrir OS com clienteOutroId mas veiculoId (pertence ao clienteId original)
+## Esperado: 422
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteOutroId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "Tentativa com veiculo de outro cliente."
+}
+
+
+### [29] Iniciar diagnóstico usando perfil Atendente
+## Esperado: 403 — perfil Atendente não tem permissão para iniciar diagnóstico
+
+# Passo 29a — criar nova OS para este teste
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "OS para teste de permissao."
+}
+
+## ► Copiar "id" para usar no próximo request (substituir manualmente abaixo)
+
+###
+# Passo 29b — tentar iniciar diagnóstico com Atendente
+## Esperado: 403
+# PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/iniciar-diagnostico HTTP/1.1
+PATCH {{baseUrl}}/api/v1/ordens-servico/2c6b0d2a-7866-4a4b-a48b-3b8138df19fd/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+### [30] Adicionar serviço em OS com status RECEBIDA (antes de iniciar diagnóstico)
+## Criar nova OS e tentar adicionar serviço sem iniciar diagnóstico antes
+## Esperado: 422 — status inválido para a operação
+
+# Passo 30a — criar nova OS RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "OS para testar adicao de servico sem diagnostico iniciado."
+}
+
+## ► Copiar "id" e substituir no passo 30b manualmente
+
+###
+# Passo 30b — tentar adicionar serviço em OS RECEBIDA
+## Esperado: 422 — "Só é possível adicionar serviços em OS com status 'EM_DIAGNOSTICO'"
+# POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/servicos HTTP/1.1
+POST {{baseUrl}}/api/v1/ordens-servico/e7d67ef4-bf7c-46ab-898f-970d8bb43831/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoId}}",
+    "observacao": "Nao deve funcionar pois OS esta RECEBIDA."
+}
+
+
+### [31] Concluir diagnóstico sem serviço ativo vinculado
+## Criar OS, iniciar diagnóstico, registrar diagnóstico e concluir SEM adicionar serviço
+## Esperado: 422 — "Não é possível concluir o diagnóstico sem pelo menos um serviço ativo"
+
+# Passo 31a — criar OS
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "OS para testar conclusao sem servico."
+}
+
+## ► Copiar "id" e substituir nos passos 31b/c/d manualmente
+
+###
+# Passo 31b — iniciar diagnóstico
+# PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/iniciar-diagnostico HTTP/1.1
+PATCH {{baseUrl}}/api/v1/ordens-servico/fbbe33f0-cc33-453f-bae9-3baab2fc8ca0/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+# Passo 31c — registrar diagnóstico
+# PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/diagnostico HTTP/1.1
+PATCH {{baseUrl}}/api/v1/ordens-servico/fbbe33f0-cc33-453f-bae9-3baab2fc8ca0/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Diagnostico registrado para testar conclusao sem servico."
+}
+
+###
+# Passo 31d — tentar concluir sem serviço
+## Esperado: 422 — "Não é possível concluir o diagnóstico sem pelo menos um serviço ativo"
+# PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/concluir-diagnostico HTTP/1.1
+PATCH {{baseUrl}}/api/v1/ordens-servico/fbbe33f0-cc33-453f-bae9-3baab2fc8ca0/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+### [32] Adicionar item com quantidade zero
+## Esperado: 422 — "A quantidade deve ser maior que zero."
+# POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+POST {{baseUrl}}/api/v1/ordens-servico/fbbe33f0-cc33-453f-bae9-3baab2fc8ca0/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemComSaldoId}}",
+    "quantidade": 0
+}
+
+
+### [33] Tentar adicionar o mesmo serviço novamente (duplicidade ativa)
+## Pré-condição: serviço já adicionado no passo [16] e OS ainda EM_DIAGNOSTICO
+## Esperado: 409 — "Serviço já foi adicionado a esta ordem de serviço."
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoId}}",
+    "observacao": "Tentativa duplicada — nao deve funcionar."
+}
+
+
+### [34] Tentar adicionar o mesmo item COM saldo novamente (duplicidade ativa)
+## Pré-condição: item reservado adicionado no passo [24] e OS ainda EM_DIAGNOSTICO
+## Esperado: 409 — "Item já foi adicionado a esta ordem de serviço."
+##            Estoque NÃO deve ser reservado novamente
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemComSaldoId}}",
+    "quantidade": 2
+}
+
+
+### [34b] Consultar estoque após tentativa duplicada de item
+## Esperado: quantidade_disponivel e quantidade_reservada inalteradas
+##           (sem nova reserva pela tentativa de duplicata)
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemComSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}

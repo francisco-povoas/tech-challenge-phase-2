@@ -402,7 +402,7 @@ class OrdemServicoRepo:
                 OrdemServicoModel.status.in_(self._STATUS_FINALIZADAS),
             )
         )
-        result = await self.session.execute(stmt)
+        result = await self.session.exec(stmt)
         row = result.one()
         return {
             "quantidade": row.quantidade or 0,
@@ -435,7 +435,7 @@ class OrdemServicoRepo:
             )
             .order_by(OrdemServicoModel.criado_em.asc())
         )
-        result = await self.session.execute(stmt)
+        result = await self.session.exec(stmt)
         return [
             {
                 "ordem_servico_id": str(row.ordem_servico_id),

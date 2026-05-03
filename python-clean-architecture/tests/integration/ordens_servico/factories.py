@@ -1540,3 +1540,189 @@ async def criar_os_com_orcamento_comunicado_misto(
         "ordem_servico_item_reservado": os_item_reservado,
         "ordem_servico_item_a_receber": os_item_a_receber,
     }
+
+
+# ---------------------------------------------------------------------------
+# Factories para métricas de tempo de execução
+# ---------------------------------------------------------------------------
+
+
+async def criar_os_finalizada_com_servico_e_tempo(
+    client: AsyncClient,
+    admin_headers: dict,
+    atendente_headers: dict,
+    mecanico_headers: dict,
+    servico_id: str,
+    tempo_executado_minutos: int,
+) -> dict:
+    """
+    Cria uma OS FINALIZADA usando um serviço específico do catálogo com
+    tempo_executado_minutos informado.
+
+    Entrada:
+      client, admin_headers,
+      atendente_headers, mecanico_headers — já criados/autenticados pelo chamador,
+      servico_id                          — ID do serviço do catálogo,
+      tempo_executado_minutos             — tempo a registrar no serviço da OS.
+
+    Retorna:
+      {
+        cliente, veiculo, item_estoque,
+        ordem_servico, ordem_servico_servico, ordem_servico_item,
+      }
+
+    Responsabilidades por perfil:
+      Atendente: criar cliente, veículo, item de estoque, OS, gerar orçamento, aprovar orçamento.
+      Mecânico:  iniciar diagnóstico, registrar diagnóstico, adicionar serviço, adicionar item,
+                 concluir diagnóstico, iniciar execução, registrar tempo, finalizar OS.
+    """
+    cliente = await criar_cliente(
+        client, atendente_headers,
+        email=f"cliente-met-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, atendente_headers, cliente["id"])
+    item_estoque = await criar_item_estoque(
+        client, atendente_headers,
+        quantidade_disponivel=10,
+        valor_unitario="85.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente_headers, cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico_headers)
+    assert r.status_code == 200, f"iniciar-diagnostico: {r.status_code} — {r.text}"
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste identificado — substituição necessária."},
+        headers=mecanico_headers,
+    )
+    assert r.status_code == 200, f"registrar-diagnostico: {r.status_code} — {r.text}"
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico_id},
+        headers=mecanico_headers,
+    )
+    assert r.status_code == 201, f"adicionar-servico: {r.status_code} — {r.text}"
+    ordem_servico_servico = r.json()
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque["id"], "quantidade": 1},
+        headers=mecanico_headers,
+    )
+    assert r.status_code == 201, f"adicionar-item: {r.status_code} — {r.text}"
+    ordem_servico_item = r.json()
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico_headers)
+    assert r.status_code == 200, f"concluir-diagnostico: {r.status_code} — {r.text}"
+
+    await gerar_orcamento(client, atendente_headers, os_id)
+    await aprovar_orcamento(client, atendente_headers, os_id)
+
+    await iniciar_execucao_os(client, mecanico_headers, os_id)
+
+    await registrar_tempo_executado_servico(
+        client, mecanico_headers, os_id, ordem_servico_servico["id"], tempo_executado_minutos
+    )
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/finalizar", headers=mecanico_headers)
+    assert r.status_code == 200, f"finalizar: {r.status_code} — {r.text}"
+
+    ordem_servico = await detalhar_os(client, atendente_headers, os_id)
+    assert ordem_servico["status"] == "FINALIZADA"
+
+    return {
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "item_estoque": item_estoque,
+        "ordem_servico": ordem_servico,
+        "ordem_servico_servico": ordem_servico_servico,
+        "ordem_servico_item": ordem_servico_item,
+    }
+
+
+async def criar_os_em_execucao_com_servico_e_tempo(
+    client: AsyncClient,
+    admin_headers: dict,
+    atendente_headers: dict,
+    mecanico_headers: dict,
+    servico_id: str,
+    tempo_executado_minutos: int,
+) -> dict:
+    """
+    Cria uma OS EM_EXECUCAO com serviço específico e tempo registrado, mas NÃO finalizada.
+
+    Útil para validar que OS EM_EXECUCAO é ignorada pelas métricas.
+
+    Retorna:
+      {
+        cliente, veiculo, item_estoque,
+        ordem_servico, ordem_servico_servico, ordem_servico_item,
+      }
+    """
+    cliente = await criar_cliente(
+        client, atendente_headers,
+        email=f"cliente-emex-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, atendente_headers, cliente["id"])
+    item_estoque = await criar_item_estoque(
+        client, atendente_headers,
+        quantidade_disponivel=10,
+        valor_unitario="85.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente_headers, cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico_headers)
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste identificado."},
+        headers=mecanico_headers,
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico_id},
+        headers=mecanico_headers,
+    )
+    assert r.status_code == 201
+    ordem_servico_servico = r.json()
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque["id"], "quantidade": 1},
+        headers=mecanico_headers,
+    )
+    assert r.status_code == 201
+    ordem_servico_item = r.json()
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico_headers)
+    assert r.status_code == 200
+
+    await gerar_orcamento(client, atendente_headers, os_id)
+    await aprovar_orcamento(client, atendente_headers, os_id)
+
+    await iniciar_execucao_os(client, mecanico_headers, os_id)
+
+    await registrar_tempo_executado_servico(
+        client, mecanico_headers, os_id, ordem_servico_servico["id"], tempo_executado_minutos
+    )
+
+    ordem_servico = await detalhar_os(client, atendente_headers, os_id)
+    assert ordem_servico["status"] == "EM_EXECUCAO"
+
+    return {
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "item_estoque": item_estoque,
+        "ordem_servico": ordem_servico,
+        "ordem_servico_servico": ordem_servico_servico,
+        "ordem_servico_item": ordem_servico_item,
+    }

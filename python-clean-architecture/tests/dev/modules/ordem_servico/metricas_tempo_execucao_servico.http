@@ -1,0 +1,642 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Execute as requisições de login abaixo e copie o valor de "access_token"
+## para as variáveis correspondentes.
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZTQ2Mjc3Ny1kNDhjLTQxNjYtYmQ5My0xNmRkYzIwMzNiNGEiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc4NDcyMDZ9.1wtinIQjuDm1StiP7WUbnlMN8m-MMet2RNo1PfX6aLg
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTFmOTE3NC01ZGRiLTQ1OTctOGNlYS1hYjM2YzAzMWNiODMiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3Nzg0Nzc3Nn0.1v_ZPS30ifJHVkQIcrAGscWX-91uyvjPgdeJV3iiU5o
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5MmNlY2RjZS0yMzI3LTRlMmYtOWU4OC05ODBmODUxYTU5NjkiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3ODQ5MTEzfQ.dE0Uw5uw5hh4-TC0dHkn4KNyBNLwJlyg0t1VvPs-1Nc
+
+## ============================================================
+## IDs — Serviços do catálogo
+## ============================================================
+
+@servicoMetricaId =  2b0774da-2e8b-4ef3-ad4e-288dbee8ce77
+@servicoSemExecucoesId = 65f6136d-b9d5-4352-9a05-3b7b060ee5c9
+
+## ============================================================
+## IDs — OS 1 (tempo_executado_minutos = 60)
+## ============================================================
+
+@cliente1Id = 4ba94d22-e775-439f-a029-f61af3aa685e
+@veiculo1Id = f5ccfb9a-144a-4a23-856e-9f67aa5ea52b
+@itemEstoque1Id = eae4641a-b4f7-452a-bd12-5a5b7c0fe360
+@ordemServico1Id = 8f72135a-796d-4ebd-bebd-2b01382fb602
+@ordemServicoServico1Id = e0640091-8849-49ec-8288-1527245c5ea9
+@ordemServicoItem1Id = 3b0d7bac-a72a-4474-ad5d-d07bd47f3c21
+
+## ============================================================
+## IDs — OS 2 (tempo_executado_minutos = 75)
+## ============================================================
+
+@cliente2Id = fd82c48b-5dde-43fd-a575-5d90ec1094e8
+@veiculo2Id = 8b1073f5-0f34-4d3f-b5a4-2967b1d5291b
+@itemEstoque2Id = 86bb6a8e-faea-461e-873c-ab84933c3811
+@ordemServico2Id = 3b07cc36-59a3-4978-9f83-108103c185d2
+@ordemServicoServico2Id = 95fff321-5502-480b-a03c-80dac5d1f7a6
+@ordemServicoItem2Id = 1eecdbba-101c-4942-941d-0bf6f3ed1e74
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA
+##
+## [PREPARAÇÃO — AUTENTICAÇÃO]
+##  AUTH-01. Login admin
+##  AUTH-02. Criar usuário Atendente Métricas
+##  AUTH-03. Login Atendente
+##  AUTH-04. Criar usuário Mecânico Métricas
+##  AUTH-05. Login Mecânico
+##
+## [SERVIÇOS DO CATÁLOGO]
+##  SVC-01.  Criar serviço que será usado nas métricas → @servicoMetricaId
+##  SVC-02.  Criar serviço sem execuções → @servicoSemExecucoesId
+##
+## [OS 1 — FINALIZADA COM 60 MINUTOS]
+##  OS1-01.  Criar cliente 1 → @cliente1Id
+##  OS1-02.  Criar veículo 1 → @veiculo1Id
+##  OS1-03.  Criar item de estoque 1 → @itemEstoque1Id
+##  OS1-04.  Criar OS 1 → @ordemServico1Id
+##  OS1-05.  Iniciar diagnóstico
+##  OS1-06.  Registrar diagnóstico
+##  OS1-07.  Adicionar serviço @servicoMetricaId → @ordemServicoServico1Id
+##  OS1-08.  Adicionar item → @ordemServicoItem1Id
+##  OS1-09.  Concluir diagnóstico
+##  OS1-10.  Gerar orçamento
+##  OS1-11.  Aprovar orçamento
+##  OS1-12.  Iniciar execução
+##  OS1-13.  Registrar tempo executado 60 min
+##  OS1-14.  Finalizar OS → status FINALIZADA
+##
+## [OS 2 — FINALIZADA COM 75 MINUTOS]
+##  OS2-01.  Criar cliente 2 → @cliente2Id
+##  OS2-02.  Criar veículo 2 → @veiculo2Id
+##  OS2-03.  Criar item de estoque 2 → @itemEstoque2Id
+##  OS2-04.  Criar OS 2 → @ordemServico2Id
+##  OS2-05.  Iniciar diagnóstico
+##  OS2-06.  Registrar diagnóstico
+##  OS2-07.  Adicionar serviço @servicoMetricaId → @ordemServicoServico2Id
+##  OS2-08.  Adicionar item → @ordemServicoItem2Id
+##  OS2-09.  Concluir diagnóstico
+##  OS2-10.  Gerar orçamento
+##  OS2-11.  Aprovar orçamento
+##  OS2-12.  Iniciar execução
+##  OS2-13.  Registrar tempo executado 75 min
+##  OS2-14.  Finalizar OS → status FINALIZADA
+##
+## [CONSULTAS — MÉTRICAS DO SERVIÇO COM EXECUÇÕES]
+##  MET-01.  Atendente consulta estatística → 200, tempo_medio=67.5
+##  MET-02.  Atendente consulta execuções  → 200, lista com 2 itens
+##  MET-03.  Atendente consulta estatística novamente → 200
+##
+## [CONSULTAS — SERVIÇO SEM EXECUÇÕES]
+##  MET-04.  Atendente consulta estatística → 200, quantidade=0, tempos null
+##  MET-05.  Atendente consulta execuções  → 200, execucoes=[]
+##
+## [PERMISSÕES E ERROS BÁSICOS]
+##  NEG-01.  Mecânico consulta estatística    → 403
+##  NEG-02.  Sem token consulta estatística   → 401/403
+##  NEG-03.  Serviço inexistente — estatística → 404
+##  NEG-04.  Serviço inexistente — execuções  → 404
+## ============================================================
+
+
+## ============================================================
+## PREPARAÇÃO — AUTENTICAÇÃO
+## ============================================================
+
+### [AUTH-01] Login admin
+## ► Copiar "access_token" para @tokenAdmin
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@example.com&password=admin123
+
+###
+
+### [AUTH-02] Criar usuário Atendente Métricas
+## (pode pular se já existir — ir direto para AUTH-03)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Atendente Metricas",
+    "email": "atendente.metricas@example.com",
+    "senha": "senha123",
+    "perfis": ["Atendente"]
+}
+
+###
+
+### [AUTH-03] Login Atendente Métricas
+## ► Copiar "access_token" para @tokenAtendente
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=atendente.metricas@example.com&password=senha123
+
+###
+
+### [AUTH-04] Criar usuário Mecânico Métricas
+## (pode pular se já existir — ir direto para AUTH-05)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Mecanico Metricas",
+    "email": "mecanico.metricas@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
+}
+
+###
+
+### [AUTH-05] Login Mecânico Métricas
+## ► Copiar "access_token" para @tokenMecanico
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=mecanico.metricas@example.com&password=senha123
+
+###
+
+
+## ============================================================
+## SERVIÇOS DO CATÁLOGO
+## ============================================================
+
+### [SVC-01] Criar serviço que será usado nas métricas
+## ► Copiar "id" para @servicoMetricaId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Servico Metrica Troca Correia",
+    "descricao": "Servico usado para validar metricas de tempo de execucao",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 60
+}
+
+###
+
+### [SVC-02] Criar serviço SEM execuções (não será adicionado a nenhuma OS)
+## ► Copiar "id" para @servicoSemExecucoesId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Servico Metrica Sem Execucoes",
+    "descricao": "Servico sem OS finalizada para validar metricas vazias",
+    "valor_base": 100.00,
+    "tempo_medio_minutos": 45
+}
+
+###
+
+
+## ============================================================
+## OS 1 — FINALIZADA COM 60 MINUTOS
+## ============================================================
+
+### [OS1-01] Criar cliente 1
+## ► Copiar "id" para @cliente1Id
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Cliente Metrica 1",
+    "cpf_cnpj": "71428793860",
+    "telefone": "11900000001",
+    "email": "cliente.metrica1@example.com",
+    "cep": "01310100",
+    "logradouro": "Av. Paulista",
+    "numero": "100",
+    "complemento": null,
+    "bairro": "Bela Vista",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [OS1-02] Criar veículo 1
+## ► Copiar "id" para @veiculo1Id
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{cliente1Id}}",
+    "placa": "MET1A01",
+    "marca": "Volkswagen",
+    "modelo": "Gol",
+    "ano_fabricacao": 2020,
+    "ano_modelo": 2020,
+    "cor": "Prata"
+}
+
+###
+
+### [OS1-03] Criar item de estoque 1 (com saldo)
+## ► Copiar "id" para @itemEstoque1Id
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "INSUMO",
+    "nome": "Oleo Motor Metrica 1",
+    "descricao": "Oleo 5W30 para OS metrica 1",
+    "codigo": "MET-ITEM-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 1,
+    "valor_unitario": 45.00
+}
+
+###
+
+### [OS1-04] Criar OS 1
+## ► Copiar "id" para @ordemServico1Id
+## Esperado: status = RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{cliente1Id}}",
+    "veiculo_id": "{{veiculo1Id}}",
+    "queixa_inicial": "Troca de correia — OS metrica 1"
+}
+
+###
+
+### [OS1-05] Iniciar diagnóstico OS 1
+## Esperado: status = EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS1-06] Registrar diagnóstico OS 1
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Correia com desgaste acentuado — substituição necessária."
+}
+
+###
+
+### [OS1-07] Adicionar serviço @servicoMetricaId à OS 1
+## ► Copiar "id" do vínculo para @ordemServicoServico1Id
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoMetricaId}}"
+}
+
+###
+
+### [OS1-08] Adicionar item de estoque à OS 1
+## ► Copiar "id" do vínculo para @ordemServicoItem1Id
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemEstoque1Id}}",
+    "quantidade": 1
+}
+
+###
+
+### [OS1-09] Concluir diagnóstico OS 1
+## Esperado: status = DIAGNOSTICO_CONCLUIDO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS1-10] Gerar orçamento OS 1
+## Esperado: status OS = AGUARDANDO_APROVACAO
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [OS1-11] Aprovar orçamento OS 1
+## Esperado: status OS = APROVADA (todos os itens RESERVADO)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [OS1-12] Iniciar execução OS 1
+## Esperado: status OS = EM_EXECUCAO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS1-13] Registrar tempo executado 60 min no serviço da OS 1
+## Esperado: tempo_executado_minutos = 60
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/servicos/{{ordemServicoServico1Id}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 60
+}
+
+###
+
+### [OS1-14] Finalizar OS 1
+## Esperado: status = FINALIZADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+
+## ============================================================
+## OS 2 — FINALIZADA COM 75 MINUTOS
+## ============================================================
+
+### [OS2-01] Criar cliente 2
+## ► Copiar "id" para @cliente2Id
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Cliente Metrica 2",
+    "cpf_cnpj": "37550610047",
+    "telefone": "11900000002",
+    "email": "cliente.metrica2@example.com",
+    "cep": "04538133",
+    "logradouro": "Av. Brigadeiro Faria Lima",
+    "numero": "200",
+    "complemento": null,
+    "bairro": "Itaim Bibi",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [OS2-02] Criar veículo 2
+## ► Copiar "id" para @veiculo2Id
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{cliente2Id}}",
+    "placa": "MET2A02",
+    "marca": "Honda",
+    "modelo": "Civic",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2021,
+    "cor": "Branco"
+}
+
+###
+
+### [OS2-03] Criar item de estoque 2 (com saldo)
+## ► Copiar "id" para @itemEstoque2Id
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "INSUMO",
+    "nome": "Oleo Motor Metrica 2",
+    "descricao": "Oleo 5W30 para OS metrica 2",
+    "codigo": "MET-ITEM-002",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 1,
+    "valor_unitario": 45.00
+}
+
+###
+
+### [OS2-04] Criar OS 2
+## ► Copiar "id" para @ordemServico2Id
+## Esperado: status = RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{cliente2Id}}",
+    "veiculo_id": "{{veiculo2Id}}",
+    "queixa_inicial": "Troca de correia — OS metrica 2"
+}
+
+###
+
+### [OS2-05] Iniciar diagnóstico OS 2
+## Esperado: status = EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS2-06] Registrar diagnóstico OS 2
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Correia com desgaste acentuado — substituição necessária."
+}
+
+###
+
+### [OS2-07] Adicionar serviço @servicoMetricaId à OS 2
+## ► Copiar "id" do vínculo para @ordemServicoServico2Id
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoMetricaId}}"
+}
+
+###
+### [OS2-08] Adicionar item de estoque à OS 2
+## ► Copiar "id" do vínculo para @ordemServicoItem2Id
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemEstoque2Id}}",
+    "quantidade": 1
+}
+
+###
+
+### [OS2-09] Concluir diagnóstico OS 2
+## Esperado: status = DIAGNOSTICO_CONCLUIDO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS2-10] Gerar orçamento OS 2
+## Esperado: status OS = AGUARDANDO_APROVACAO
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [OS2-11] Aprovar orçamento OS 2
+## Esperado: status OS = APROVADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [OS2-12] Iniciar execução OS 2
+## Esperado: status OS = EM_EXECUCAO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS2-13] Registrar tempo executado 75 min no serviço da OS 2
+## Esperado: tempo_executado_minutos = 75
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/servicos/{{ordemServicoServico2Id}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 75
+}
+
+###
+
+### [OS2-14] Finalizar OS 2
+## Esperado: status = FINALIZADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico2Id}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+
+## ============================================================
+## CONSULTAS — MÉTRICAS DO SERVIÇO COM EXECUÇÕES
+## ============================================================
+
+### [MET-01] Atendente consulta estatística do serviço com execuções
+## Esperado:
+##   HTTP 200
+##   servico_id            = @servicoMetricaId
+##   nome_servico          = "Servico Metrica Troca Correia"
+##   tempo_estimado_minutos = 60
+##   quantidade_ordens_servico = 2
+##   tempo_medio_minutos   = 67.5
+##   menor_tempo_minutos   = 60
+##   maior_tempo_minutos   = 75
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoMetricaId}}/tempo-execucao HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [MET-02] Atendente consulta execuções do serviço
+## Esperado:
+##   HTTP 200
+##   servico_id               = @servicoMetricaId
+##   tempo_estimado_minutos   = 60
+##   quantidade_ordens_servico = 2
+##   execucoes com 2 itens:
+##     - tempo_executado_minutos = 60, status_os = "FINALIZADA"
+##     - tempo_executado_minutos = 75, status_os = "FINALIZADA"
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoMetricaId}}/execucoes HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [MET-03] Atendente consulta estatística do serviço novamente
+## Esperado: HTTP 200
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoMetricaId}}/tempo-execucao HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+
+## ============================================================
+## CONSULTAS — SERVIÇO SEM EXECUÇÕES
+## ============================================================
+
+### [MET-04] Atendente consulta estatística de serviço sem execuções
+## Esperado:
+##   HTTP 200
+##   servico_id               = @servicoSemExecucoesId
+##   tempo_estimado_minutos   = 45
+##   quantidade_ordens_servico = 0
+##   tempo_medio_minutos      = null
+##   menor_tempo_minutos      = null
+##   maior_tempo_minutos      = null
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoSemExecucoesId}}/tempo-execucao HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [MET-05] Atendente consulta execuções de serviço sem execuções
+## Esperado:
+##   HTTP 200
+##   quantidade_ordens_servico = 0
+##   execucoes = []
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoSemExecucoesId}}/execucoes HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+
+## ============================================================
+## PERMISSÕES E ERROS BÁSICOS
+## ============================================================
+
+### [NEG-01] Mecânico não pode consultar estatística
+## Esperado: HTTP 403
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoMetricaId}}/tempo-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [NEG-02] Sem token não consulta estatística
+## Esperado: HTTP 401 ou 403 (conforme padrão atual do projeto)
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/{{servicoMetricaId}}/tempo-execucao HTTP/1.1
+
+###
+
+### [NEG-03] Serviço inexistente — estatística retorna 404
+## Esperado: HTTP 404
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/00000000-0000-0000-0000-000000000099/tempo-execucao HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [NEG-04] Serviço inexistente — execuções retorna 404
+## Esperado: HTTP 404
+GET {{baseUrl}}/api/v1/ordens-servico/metricas/servicos/00000000-0000-0000-0000-000000000099/execucoes HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###

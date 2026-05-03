@@ -1,7 +1,7 @@
 """Implementação concreta do repositório de Ordens de Serviço (SQLModel + PostgreSQL)."""
 
 from decimal import Decimal
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -372,3 +372,76 @@ class OrdemServicoRepo:
             enviado_em=model.enviado_em,
             criado_em=model.criado_em,
         )
+
+    # -----------------------------------------------------------------------
+    # Métricas — tempo de execução por serviço do catálogo
+    # -----------------------------------------------------------------------
+
+    _STATUS_FINALIZADAS = ("FINALIZADA", "ENTREGUE")
+
+    async def obter_estatistica_tempo_execucao_servico(
+        self, servico_id: UUID
+    ) -> dict[str, Any]:
+        """Retorna estatística agregada de tempo executado para um serviço do catálogo."""
+        stmt = (
+            sa.select(
+                sa.func.count(OrdemServicoServicoModel.id).label("quantidade"),
+                sa.func.avg(OrdemServicoServicoModel.tempo_executado_minutos).label("media"),
+                sa.func.min(OrdemServicoServicoModel.tempo_executado_minutos).label("menor"),
+                sa.func.max(OrdemServicoServicoModel.tempo_executado_minutos).label("maior"),
+            )
+            .select_from(OrdemServicoServicoModel)
+            .join(
+                OrdemServicoModel,
+                OrdemServicoModel.id == OrdemServicoServicoModel.ordem_servico_id,
+            )
+            .where(
+                OrdemServicoServicoModel.servico_id == servico_id,
+                OrdemServicoServicoModel.cancelado == False,  # noqa: E712
+                OrdemServicoServicoModel.tempo_executado_minutos.isnot(None),
+                OrdemServicoModel.status.in_(self._STATUS_FINALIZADAS),
+            )
+        )
+        result = await self.session.execute(stmt)
+        row = result.one()
+        return {
+            "quantidade": row.quantidade or 0,
+            "media": float(row.media) if row.media is not None else None,
+            "menor": int(row.menor) if row.menor is not None else None,
+            "maior": int(row.maior) if row.maior is not None else None,
+        }
+
+    async def listar_execucoes_servico(
+        self, servico_id: UUID
+    ) -> list[dict[str, Any]]:
+        """Retorna lista de execuções do serviço em OS finalizadas/entregues."""
+        stmt = (
+            sa.select(
+                OrdemServicoModel.id.label("ordem_servico_id"),
+                OrdemServicoServicoModel.id.label("ordem_servico_servico_id"),
+                OrdemServicoServicoModel.tempo_executado_minutos,
+                OrdemServicoModel.status.label("status_os"),
+            )
+            .select_from(OrdemServicoServicoModel)
+            .join(
+                OrdemServicoModel,
+                OrdemServicoModel.id == OrdemServicoServicoModel.ordem_servico_id,
+            )
+            .where(
+                OrdemServicoServicoModel.servico_id == servico_id,
+                OrdemServicoServicoModel.cancelado == False,  # noqa: E712
+                OrdemServicoServicoModel.tempo_executado_minutos.isnot(None),
+                OrdemServicoModel.status.in_(self._STATUS_FINALIZADAS),
+            )
+            .order_by(OrdemServicoModel.criado_em.asc())
+        )
+        result = await self.session.execute(stmt)
+        return [
+            {
+                "ordem_servico_id": str(row.ordem_servico_id),
+                "ordem_servico_servico_id": str(row.ordem_servico_servico_id),
+                "tempo_executado_minutos": row.tempo_executado_minutos,
+                "status_os": row.status_os,
+            }
+            for row in result.all()
+        ]

@@ -41,6 +41,8 @@ from app.modules.ordens_servico.application.use_cases import (
     IniciarExecucaoOrdemServicoUseCase,
     RegistrarTempoExecutadoServicoUseCase,
     FinalizarOrdemServicoUseCase,
+    ObterEstatisticaTempoExecucaoServicoUseCase,
+    ListarExecucoesServicoUseCase,
 )
 
 
@@ -183,6 +185,26 @@ def get_finalizar_ordem_servico(uow: _UoWDep) -> FinalizarOrdemServicoUseCase:
     return FinalizarOrdemServicoUseCase(uow=uow)
 
 
+def get_obter_estatistica_tempo_execucao_servico(
+    repo: _RepoDep,
+    servico_repo: _ServicoRepoDep,
+) -> ObterEstatisticaTempoExecucaoServicoUseCase:
+    return ObterEstatisticaTempoExecucaoServicoUseCase(
+        ordem_servico_repo=repo,
+        servico_repo=servico_repo,
+    )
+
+
+def get_listar_execucoes_servico(
+    repo: _RepoDep,
+    servico_repo: _ServicoRepoDep,
+) -> ListarExecucoesServicoUseCase:
+    return ListarExecucoesServicoUseCase(
+        ordem_servico_repo=repo,
+        servico_repo=servico_repo,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Aliases Annotated para uso nos routers
 # ---------------------------------------------------------------------------
@@ -206,3 +228,5 @@ ConfirmarRecebimentoItemDep = Annotated[ConfirmarRecebimentoItemDaOrdemServicoUs
 IniciarExecucaoDep = Annotated[IniciarExecucaoOrdemServicoUseCase, Depends(get_iniciar_execucao)]
 RegistrarTempoExecutadoDep = Annotated[RegistrarTempoExecutadoServicoUseCase, Depends(get_registrar_tempo_executado)]
 FinalizarOrdemServicoDep = Annotated[FinalizarOrdemServicoUseCase, Depends(get_finalizar_ordem_servico)]
+ObterEstatisticaTempoExecucaoDep = Annotated[ObterEstatisticaTempoExecucaoServicoUseCase, Depends(get_obter_estatistica_tempo_execucao_servico)]
+ListarExecucoesServicoDep = Annotated[ListarExecucoesServicoUseCase, Depends(get_listar_execucoes_servico)]

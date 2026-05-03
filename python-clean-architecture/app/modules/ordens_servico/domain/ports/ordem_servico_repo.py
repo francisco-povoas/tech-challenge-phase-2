@@ -1,6 +1,7 @@
 """Contrato do repositório de Ordens de Serviço (porta de saída)."""
 
-from typing import Optional, Protocol
+from typing import Any, Optional, Protocol
+from uuid import UUID
 
 from app.shared.value_objects.id import ID
 from app.modules.ordens_servico.domain.entities.ordem_servico import OrdemServico
@@ -87,3 +88,19 @@ class OrdemServicoRepo(Protocol):
     async def listar_comunicacoes_por_orcamento_id(
         self, orcamento_id: ID
     ) -> list[OrcamentoComunicacao]: ...
+
+    # --- Métricas ---
+
+    async def obter_estatistica_tempo_execucao_servico(
+        self, servico_id: UUID
+    ) -> dict[str, Any]:
+        """Retorna dict com keys: quantidade, media, menor, maior — filtrando apenas OS
+        FINALIZADA/ENTREGUE com serviços ativos e com tempo_executado_minutos preenchido."""
+        ...
+
+    async def listar_execucoes_servico(
+        self, servico_id: UUID
+    ) -> list[dict[str, Any]]:
+        """Retorna lista de dicts com keys: ordem_servico_id, ordem_servico_servico_id,
+        tempo_executado_minutos, status_os — filtrando apenas OS FINALIZADA/ENTREGUE."""
+        ...

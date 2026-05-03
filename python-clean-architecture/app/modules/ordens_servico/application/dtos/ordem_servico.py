@@ -150,3 +150,42 @@ class OrcamentoResponse:
     respondido_em: Optional[datetime] = None
     motivo_recusa: Optional[str] = None
     comunicacoes: list[OrcamentoComunicacaoResponse] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Métricas — Tempo de execução por serviço do catálogo
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, kw_only=True)
+class EstatisticaTempoExecucaoServicoResponse:
+    """Estatística agregada de tempo executado para um serviço do catálogo."""
+
+    servico_id: str
+    nome_servico: str
+    tempo_estimado_minutos: Optional[int]
+    quantidade_ordens_servico: int
+    tempo_medio_minutos: Optional[float]
+    menor_tempo_minutos: Optional[int]
+    maior_tempo_minutos: Optional[int]
+
+
+@dataclass(frozen=True, kw_only=True)
+class ExecucaoServicoResponse:
+    """Dados de uma execução individual de serviço em OS finalizada/entregue."""
+
+    ordem_servico_id: str
+    ordem_servico_servico_id: str
+    tempo_executado_minutos: int
+    status_os: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class ListagemExecucoesServicoResponse:
+    """Listagem de execuções de um serviço do catálogo em OS finalizadas/entregues."""
+
+    servico_id: str
+    nome_servico: str
+    tempo_estimado_minutos: Optional[int]
+    quantidade_ordens_servico: int
+    execucoes: list[ExecucaoServicoResponse] = field(default_factory=list)

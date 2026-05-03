@@ -17,7 +17,9 @@ from app.modules.ordens_servico.application.dtos.ordem_servico import (
     AdicionarItemNaOSRequest,
     AdicionarServicoNaOSRequest,
     CriarOrdemServicoRequest,
+    EstatisticaTempoExecucaoServicoResponse,
     GerarOrcamentoRequest,
+    ListagemExecucoesServicoResponse,
     OrcamentoComunicacaoResponse,
     OrcamentoResponse,
     OrdemServicoDetalheResponse,
@@ -59,7 +61,9 @@ from app.modules.ordens_servico.presentation.dependencies import (
     IniciarDiagnosticoDep,
     IniciarExecucaoDep,
     ListarComunicacoesDep,
+    ListarExecucoesServicoDep,
     ListarOrdensServicoDep,
+    ObterEstatisticaTempoExecucaoDep,
     ObterOrcamentoPorOSDep,
     ObterOrdemServicoPorIdDep,
     RecusarOrcamentoDep,
@@ -146,6 +150,55 @@ async def listar_ordens_servico(
         data_fim=datetime.fromisoformat(data_fim) if data_fim else None,
     )
     return await usecase.execute(filtros)
+
+
+# ---------------------------------------------------------------------------
+# Métricas — Estatística de tempo de execução por serviço do catálogo
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/metricas/servicos/{servico_id}/tempo-execucao",
+    summary="Estatística de tempo de execução de um serviço",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "Serviço não encontrado", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def obter_estatistica_tempo_execucao_servico(
+    servico_id: UUID,
+    usecase: ObterEstatisticaTempoExecucaoDep,
+) -> EstatisticaTempoExecucaoServicoResponse:
+    from app.modules.servicos.domain.exceptions import ServicoNaoEncontradoError
+    try:
+        return await usecase.execute(str(servico_id))
+    except ServicoNaoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.get(
+    "/metricas/servicos/{servico_id}/execucoes",
+    summary="Listagem de execuções de um serviço",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "Serviço não encontrado", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def listar_execucoes_servico(
+    servico_id: UUID,
+    usecase: ListarExecucoesServicoDep,
+) -> ListagemExecucoesServicoResponse:
+    from app.modules.servicos.domain.exceptions import ServicoNaoEncontradoError
+    try:
+        return await usecase.execute(str(servico_id))
+    except ServicoNaoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 # ---------------------------------------------------------------------------

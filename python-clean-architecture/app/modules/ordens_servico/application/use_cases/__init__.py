@@ -55,6 +55,12 @@ from app.modules.ordens_servico.application.use_cases.registrar_tempo_executado_
 from app.modules.ordens_servico.application.use_cases.finalizar_ordem_servico import (
     FinalizarOrdemServicoUseCase,
 )
+from app.modules.ordens_servico.application.use_cases.obter_estatistica_tempo_execucao_servico import (
+    ObterEstatisticaTempoExecucaoServicoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.listar_execucoes_servico import (
+    ListarExecucoesServicoUseCase,
+)
 
 __all__ = [
     "CriarOrdemServicoUseCase",
@@ -76,4 +82,6 @@ __all__ = [
     "IniciarExecucaoOrdemServicoUseCase",
     "RegistrarTempoExecutadoServicoUseCase",
     "FinalizarOrdemServicoUseCase",
+    "ObterEstatisticaTempoExecucaoServicoUseCase",
+    "ListarExecucoesServicoUseCase",
 ]

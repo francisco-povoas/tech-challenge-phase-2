@@ -511,3 +511,302 @@ async def criar_os_diagnostico_concluido_para_orcamento(
         "ordem_servico_item_reservado": os_item_reservado,
         "ordem_servico_item_a_receber": os_item_a_receber,
     }
+
+
+# ---------------------------------------------------------------------------
+# Helpers para aprovação / recusa de orçamento
+# ---------------------------------------------------------------------------
+
+
+async def gerar_orcamento(
+    client: AsyncClient,
+    headers: dict,
+    os_id: str,
+    observacao: str | None = None,
+) -> dict:
+    """Gera orçamento para a OS e retorna o JSON do orçamento."""
+    payload: dict = {}
+    if observacao is not None:
+        payload["observacao"] = observacao
+    r = await client.post(f"{_BASE_OS}/{os_id}/orcamento", json=payload, headers=headers)
+    assert r.status_code == 201, f"gerar_orcamento falhou: {r.status_code} — {r.text}"
+    return r.json()
+
+
+async def criar_os_com_orcamento_comunicado_todos_itens_reservados(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS com orçamento COMUNICADO, todos os itens RESERVADO.
+
+    Configuração:
+      - serviço: valor_base = 180.00
+      - item_com_saldo: disponível=10, reservado=0, valor_unitario=85.00
+      - item na OS: quantidade=2 → RESERVADO
+      - estoque após reserva: disponível=8, reservado=2
+      - total_servicos=180.00, total_itens=170.00, total_geral=350.00
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo, servico, item_com_saldo,
+        ordem_servico, orcamento,
+        ordem_servico_item_reservado,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        telefone="11999990001",
+        email=f"cliente-res-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00")
+    item_com_saldo = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=10,
+        valor_unitario="85.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste nas pastilhas"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"], "observacao": None},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_com_saldo["id"], "quantidade": 2},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_reservado = r.json()
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+    ordem_servico = r.json()
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_com_saldo": item_com_saldo,
+        "ordem_servico": ordem_servico,
+        "orcamento": orcamento,
+        "ordem_servico_item_reservado": os_item_reservado,
+    }
+
+
+async def criar_os_com_orcamento_comunicado_com_item_a_receber(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS com orçamento COMUNICADO e item A_RECEBER.
+
+    Configuração:
+      - serviço: valor_base = 180.00
+      - item_sem_saldo: disponível=0, valor_unitario=220.00
+      - item na OS: quantidade=1 → A_RECEBER
+      - total_servicos=180.00, total_itens=220.00, total_geral=400.00
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo, servico, item_sem_saldo,
+        ordem_servico, orcamento,
+        ordem_servico_item_a_receber,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        telefone="11999990002",
+        email=f"cliente-arec-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00")
+    item_sem_saldo = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="220.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste nas pastilhas"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"], "observacao": None},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_sem_saldo["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_a_receber = r.json()
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+    ordem_servico = r.json()
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_sem_saldo": item_sem_saldo,
+        "ordem_servico": ordem_servico,
+        "orcamento": orcamento,
+        "ordem_servico_item_a_receber": os_item_a_receber,
+    }
+
+
+async def criar_os_com_orcamento_comunicado_misto(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS com orçamento COMUNICADO, item RESERVADO + item A_RECEBER.
+
+    Configuração:
+      - serviço: valor_base = 180.00
+      - item_com_saldo: disponível=10, valor_unitario=85.00 → quantidade=2 → RESERVADO
+      - item_sem_saldo: disponível=0, valor_unitario=220.00 → quantidade=1 → A_RECEBER
+      - estoque após reserva: disponível=8, reservado=2
+      - total_servicos=180.00, total_itens=390.00, total_geral=570.00
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo, servico,
+        item_com_saldo, item_sem_saldo,
+        ordem_servico, orcamento,
+        ordem_servico_item_reservado, ordem_servico_item_a_receber,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        telefone="11999990003",
+        email=f"cliente-misto-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00")
+    item_com_saldo = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=10,
+        valor_unitario="85.00",
+    )
+    item_sem_saldo = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="220.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste nas pastilhas"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"], "observacao": None},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_com_saldo["id"], "quantidade": 2},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_reservado = r.json()
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_sem_saldo["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_a_receber = r.json()
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+    ordem_servico = r.json()
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_com_saldo": item_com_saldo,
+        "item_sem_saldo": item_sem_saldo,
+        "ordem_servico": ordem_servico,
+        "orcamento": orcamento,
+        "ordem_servico_item_reservado": os_item_reservado,
+        "ordem_servico_item_a_receber": os_item_a_receber,
+    }

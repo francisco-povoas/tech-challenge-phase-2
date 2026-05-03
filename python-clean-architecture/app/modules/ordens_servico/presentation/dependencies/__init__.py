@@ -37,6 +37,7 @@ from app.modules.ordens_servico.application.use_cases import (
     ListarComunicacoesOrcamentoUseCase,
     AprovarOrcamentoUseCase,
     RecusarOrcamentoUseCase,
+    ConfirmarRecebimentoItemDaOrdemServicoUseCase,
 )
 
 
@@ -163,6 +164,10 @@ def get_recusar_orcamento(uow: _UoWDep) -> RecusarOrcamentoUseCase:
     return RecusarOrcamentoUseCase(uow=uow)
 
 
+def get_confirmar_recebimento_item(uow: _UoWDep) -> ConfirmarRecebimentoItemDaOrdemServicoUseCase:
+    return ConfirmarRecebimentoItemDaOrdemServicoUseCase(uow=uow)
+
+
 # ---------------------------------------------------------------------------
 # Aliases Annotated para uso nos routers
 # ---------------------------------------------------------------------------
@@ -182,3 +187,4 @@ ObterOrcamentoPorOSDep = Annotated[ObterOrcamentoPorOrdemServicoUseCase, Depends
 ListarComunicacoesDep = Annotated[ListarComunicacoesOrcamentoUseCase, Depends(get_listar_comunicacoes_orcamento)]
 AprovarOrcamentoDep = Annotated[AprovarOrcamentoUseCase, Depends(get_aprovar_orcamento)]
 RecusarOrcamentoDep = Annotated[RecusarOrcamentoUseCase, Depends(get_recusar_orcamento)]
+ConfirmarRecebimentoItemDep = Annotated[ConfirmarRecebimentoItemDaOrdemServicoUseCase, Depends(get_confirmar_recebimento_item)]

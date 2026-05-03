@@ -1,0 +1,937 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Execute as requisições de login abaixo e copie o valor de "access_token"
+## para as variáveis correspondentes.
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5YzMwMjU3Yy02NTlkLTQxNDUtYWYzMi1kZDgyOGQ3ZjlkNzMiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc4MzIyOTR9.g34WeO2fdE9qN4fI4kBIjf09VV967ULEl53j_xLk3dA
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4M2ZlODdkOS02YzhhLTQ2MzMtODU3Zi1jYzZhYTUwOGY4NWYiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzgzMjMyNn0.XEeZRmKb1CQybNd4n6aXqjOfrnQWbvaHhyrjZhlQp8I
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyYTUxNjZhZC04MWQ2LTQyN2YtYTVjNC0wMTNiODY2NDdjMTciLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3ODMyNTA2fQ.qmrG98ZnMwkZzcjaUSoExTx5vLfCE5gi773RBlYYxHM
+
+## ============================================================
+## IDs — Cenário 1: Único item A_RECEBER → OS vira APROVADA
+## Preencher após cada criação na seção CENÁRIO 1.
+## ============================================================
+
+@c1ClienteId = 55499e09-8522-4f12-9705-a9d31dd4f840
+@c1VeiculoId = 2739a154-afc0-4fd2-a2f2-50695eb0a307
+@c1ServicoId = be9b9625-f3c6-4b11-b430-5ccaf0d4535b
+@c1ItemSemSaldoId = e50486df-1fea-4bfd-aa64-1cde71b08b1a
+@c1OrdemServicoId = 05480671-c66a-41bf-a3aa-1f8e4a585aea
+@c1OrdemServicoItemAReceberId = 5184996e-6b1f-441a-b475-6463b080c528
+
+## ============================================================
+## IDs — Cenário 2: Dois itens A_RECEBER → OS vira APROVADA só no último
+## Preencher após cada criação na seção CENÁRIO 2.
+## ============================================================
+
+@c2ClienteId =
+@c2VeiculoId =
+@c2ServicoId =
+@c2ItemSemSaldo1Id =
+@c2ItemSemSaldo2Id =
+@c2OrdemServicoId =
+@c2OrdemServicoItemAReceber1Id =
+@c2OrdemServicoItemAReceber2Id =
+
+## ============================================================
+## IDs — Cenário 3: Admin confirma recebimento
+## Preencher após cada criação na seção CENÁRIO 3.
+## ============================================================
+
+@c3ClienteId =
+@c3VeiculoId =
+@c3ServicoId =
+@c3ItemSemSaldoId =
+@c3OrdemServicoId =
+@c3OrdemServicoItemAReceberId =
+
+## ============================================================
+## IDs — Cenários negativos
+## Preencher conforme necessário.
+## ============================================================
+
+@negOsAguardandoId =
+@negItemAReceberId =
+@negItemReservadoId =
+@negOsDiagnosticoConcluido =
+@negItemOsOutraId =
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA
+##
+## [PREPARAÇÃO — AUTENTICAÇÃO]
+##  AUTH-01. Login admin
+##  AUTH-02. Criar usuário Atendente
+##  AUTH-03. Login Atendente
+##  AUTH-04. Criar usuário Mecânico
+##  AUTH-05. Login Mecânico
+##
+## [CENÁRIO 1 — ÚNICO ITEM A_RECEBER, OS VIRA APROVADA]
+##  C1-01.  Criar cliente
+##  C1-02.  Criar veículo
+##  C1-03.  Criar serviço (R$ 180,00)
+##  C1-04.  Criar item SEM saldo (qtd 0, R$ 220,00)
+##  C1-05.  Criar OS
+##  C1-06.  Iniciar diagnóstico
+##  C1-07.  Registrar diagnóstico
+##  C1-08.  Adicionar serviço
+##  C1-09.  Adicionar item SEM saldo (qtd 1 → A_RECEBER)
+##  C1-10.  Concluir diagnóstico
+##  C1-11.  Gerar orçamento → COMUNICADO, OS → AGUARDANDO_APROVACAO
+##  C1-12.  Aprovar orçamento → APROVADO, OS → AGUARDANDO_ITENS
+##  C1-13.  ★ Confirmar recebimento do item → item RESERVADO, OS → APROVADA ★
+##  C1-14.  Consultar estoque (disponivel=0, reservado=1)
+##  C1-15.  Detalhar OS (validar APROVADA, item RESERVADO)
+##
+## [CENÁRIO 2 — DOIS ITENS A_RECEBER]
+##  C2-01.  Criar cliente
+##  C2-02.  Criar veículo
+##  C2-03.  Criar serviço
+##  C2-04.  Criar item sem saldo 1 (R$ 100,00)
+##  C2-05.  Criar item sem saldo 2 (R$ 200,00)
+##  C2-06.  Criar OS
+##  C2-07.  Iniciar diagnóstico
+##  C2-08.  Registrar diagnóstico
+##  C2-09.  Adicionar serviço
+##  C2-10.  Adicionar item 1 (qtd 1 → A_RECEBER)
+##  C2-11.  Adicionar item 2 (qtd 1 → A_RECEBER)
+##  C2-12.  Concluir diagnóstico
+##  C2-13.  Gerar orçamento → COMUNICADO, OS → AGUARDANDO_APROVACAO
+##  C2-14.  Aprovar orçamento → APROVADO, OS → AGUARDANDO_ITENS
+##  C2-15.  ★ Confirmar recebimento do item 1 → OS continua AGUARDANDO_ITENS ★
+##  C2-16.  Consultar estoque item 1 (disponivel=0, reservado=1)
+##  C2-17.  ★ Confirmar recebimento do item 2 → OS vira APROVADA ★
+##  C2-18.  Consultar estoque item 2 (disponivel=0, reservado=1)
+##  C2-19.  Detalhar OS (validar APROVADA, ambos itens RESERVADO)
+##
+## [CENÁRIO 3 — ADMIN CONFIRMA RECEBIMENTO]
+##  C3-01 a C3-12. Preparar OS em AGUARDANDO_ITENS
+##  C3-13.  ★ Confirmar recebimento com tokenAdmin → HTTP 200 ★
+##
+## [CENÁRIOS NEGATIVOS]
+##  NEG-01. Sem token                          → 401/403
+##  NEG-02. Mecânico tenta confirmar           → 403
+##  NEG-03. Confirmar item já RESERVADO        → 422
+##  NEG-04. OS fora de AGUARDANDO_ITENS        → 422
+##  NEG-05. Item inexistente                   → 404
+##  NEG-06. Item de outra OS                   → 404
+## ============================================================
+
+
+## ============================================================
+## PREPARAÇÃO — AUTENTICAÇÃO
+## ============================================================
+
+### [AUTH-01] Login admin
+## ► Copiar "access_token" para @tokenAdmin
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@example.com&password=admin123
+
+###
+
+### [AUTH-02] Criar usuário Atendente
+## (pode pular se já existir — ir direto para AUTH-03)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Atendente Recebimento",
+    "email": "atendente.recebimento@example.com",
+    "senha": "senha123",
+    "perfis": ["Atendente"]
+}
+
+###
+
+### [AUTH-03] Login Atendente
+## ► Copiar "access_token" para @tokenAtendente
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=atendente.recebimento@example.com&password=senha123
+
+###
+
+### [AUTH-04] Criar usuário Mecânico
+## (pode pular se já existir — ir direto para AUTH-05)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Mecanico Recebimento",
+    "email": "mecanico.recebimento@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
+}
+
+###
+
+### [AUTH-05] Login Mecânico
+## ► Copiar "access_token" para @tokenMecanico
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=mecanico.recebimento@example.com&password=senha123
+
+
+## ============================================================
+## CENÁRIO 1 — ÚNICO ITEM A_RECEBER, OS VIRA APROVADA
+##
+## Objetivo:
+##   Confirmar recebimento do único item A_RECEBER ativo.
+##   OS deve sair de AGUARDANDO_ITENS e ir para APROVADA.
+##
+## Resultado esperado ao confirmar recebimento:
+##   item.status                    → RESERVADO
+##   OS.status                      → APROVADA
+##   ItemEstoque.quantidade_reservada → 0 + 1 = 1
+##   ItemEstoque.quantidade_disponivel → mantém 0
+##
+## Totais do orçamento:
+##   total_servicos = 180.00   (1 x R$ 180,00)
+##   total_itens    = 220.00   (1 x R$ 220,00 — A_RECEBER)
+##   total_geral    = 400.00
+## ============================================================
+
+###
+
+### [C1-01] Criar cliente (com email e telefone — obrigatório para envio do orçamento)
+## ► Copiar "id" para @c1ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Fernanda Recebimento C1",
+    "cpf_cnpj": "71428793860",
+    "telefone": "11991110011",
+    "email": "fernanda.receb.c1@example.com",
+    "cep": "01310100",
+    "logradouro": "Av. Paulista",
+    "numero": "100",
+    "complemento": null,
+    "bairro": "Bela Vista",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C1-02] Criar veículo para o cliente
+## ► Copiar "id" para @c1VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c1ClienteId}}",
+    "placa": "REC1C01",
+    "marca": "Volkswagen",
+    "modelo": "Gol",
+    "ano_fabricacao": 2019,
+    "ano_modelo": 2019,
+    "cor": "Vermelho"
+}
+
+###
+
+### [C1-03] Criar serviço (R$ 180,00)
+## ► Copiar "id" para @c1ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Revisao Geral C1 Recebimento",
+    "descricao": "Revisao completa do motor",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 60
+}
+
+###
+
+### [C1-04] Criar item de estoque SEM saldo (0 unidades disponíveis, R$ 220,00)
+## ► Copiar "id" para @c1ItemSemSaldoId
+## Na OS: quantidade 1 → status A_RECEBER (sem reserva de estoque)
+## Estoque antes:   disponivel=0, reservado=0
+## Estoque depois:  disponivel=0, reservado=1  (após confirmar recebimento)
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Correia Alternador C1",
+    "descricao": "Correia do alternador para cenario 1 recebimento",
+    "codigo": "CA-C1R-001",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 220.00
+}
+
+###
+
+### [C1-05] Criar OS
+## ► Copiar "id" para @c1OrdemServicoId
+## Esperado: 201 — status RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c1ClienteId}}",
+    "veiculo_id": "{{c1VeiculoId}}",
+    "queixa_inicial": "Barulho ao acelerar e luz de motor acesa."
+}
+
+###
+
+### [C1-06] Iniciar diagnóstico
+## Esperado: 200 — status EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-07] Registrar diagnóstico
+## Esperado: 200 — campo diagnostico preenchido
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Correia do alternador com desgaste critico. Necessario substituicao imediata."
+}
+
+###
+
+### [C1-08] Adicionar serviço à OS
+## Esperado: 201 — cancelado: false
+POST {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c1ServicoId}}",
+    "observacao": "Revisao conforme diagnostico."
+}
+
+###
+
+### [C1-09] Adicionar item SEM saldo (quantidade: 1)
+## ► Copiar "id" do item retornado para @c1OrdemServicoItemAReceberId
+## Esperado: 201 — status A_RECEBER  (sem saldo disponível → não reserva)
+## Estoque permanece: disponivel=0, reservado=0
+POST {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c1ItemSemSaldoId}}",
+    "quantidade": 1
+}
+
+###
+
+### [C1-09b] Consultar estoque antes do recebimento
+## Esperado: disponivel=0, reservado=0  (item ainda não chegou)
+GET {{baseUrl}}/api/v1/itens-estoque/{{c1ItemSemSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C1-10] Concluir diagnóstico
+## Esperado: 200 — status DIAGNOSTICO_CONCLUIDO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-11] Gerar orçamento
+## Esperado: 201
+## Orcamento.status = COMUNICADO
+## OS.status        = AGUARDANDO_APROVACAO
+## total_servicos   = 180.00
+## total_itens      = 220.00
+## total_geral      = 400.00
+POST {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C1-12] Aprovar orçamento
+## Esperado: 200
+## Orcamento.status → APROVADO
+## OS.status        → AGUARDANDO_ITENS  (há item A_RECEBER)
+## respondido_em    → preenchido
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C1-13] ★ CONFIRMAR RECEBIMENTO DO ITEM ★
+## Esperado: 200
+## OS.status        → APROVADA  (era o único item A_RECEBER ativo)
+## item.status      → RESERVADO
+## ItemEstoque.quantidade_disponivel → mantém 0
+## ItemEstoque.quantidade_reservada  → 0 + 1 = 1
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/itens/{{c1OrdemServicoItemAReceberId}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C1-14] Consultar estoque após recebimento
+## Esperado: disponivel=0, reservado=1
+GET {{baseUrl}}/api/v1/itens-estoque/{{c1ItemSemSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C1-15] Detalhar OS após confirmação
+## Esperado:
+##   - "status": "APROVADA"
+##   - item com status "RESERVADO"
+##   - nenhum item ativo com status "A_RECEBER"
+GET {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+## ============================================================
+## CENÁRIO 2 — DOIS ITENS A_RECEBER
+##
+## Objetivo:
+##   Confirmar recebimento dos dois itens um a um.
+##   Após o primeiro: OS continua AGUARDANDO_ITENS.
+##   Após o segundo: OS vira APROVADA.
+##
+## Resultado esperado após confirmar item 1:
+##   item1.status  → RESERVADO
+##   item2.status  → A_RECEBER
+##   OS.status     → AGUARDANDO_ITENS  (ainda há item A_RECEBER)
+##
+## Resultado esperado após confirmar item 2:
+##   item1.status  → RESERVADO
+##   item2.status  → RESERVADO
+##   OS.status     → APROVADA
+##
+## Totais do orçamento:
+##   total_servicos = 150.00   (1 x R$ 150,00)
+##   total_itens    = 300.00   (1 x R$ 100,00 + 1 x R$ 200,00 — ambos A_RECEBER)
+##   total_geral    = 450.00
+## ============================================================
+
+###
+
+### [C2-01] Criar cliente
+## ► Copiar "id" para @c2ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Gustavo Recebimento C2",
+    "cpf_cnpj": "37550610047",
+    "telefone": "11991110022",
+    "email": "gustavo.receb.c2@example.com",
+    "cep": "01310100",
+    "logradouro": "Av. Brigadeiro Faria Lima",
+    "numero": "200",
+    "complemento": null,
+    "bairro": "Pinheiros",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C2-02] Criar veículo para o cliente
+## ► Copiar "id" para @c2VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c2ClienteId}}",
+    "placa": "REC2C02",
+    "marca": "Chevrolet",
+    "modelo": "Onix",
+    "ano_fabricacao": 2022,
+    "ano_modelo": 2022,
+    "cor": "Preto"
+}
+
+###
+
+### [C2-03] Criar serviço (R$ 150,00)
+## ► Copiar "id" para @c2ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca de Freios C2",
+    "descricao": "Substituicao de pastilhas e discos de freio",
+    "valor_base": 150.00,
+    "tempo_medio_minutos": 90
+}
+
+###
+
+### [C2-04] Criar item sem saldo 1 (R$ 100,00)
+## ► Copiar "id" para @c2ItemSemSaldo1Id
+## Na OS: quantidade 1 → status A_RECEBER
+## Estoque antes:  disponivel=0, reservado=0
+## Estoque depois: disponivel=0, reservado=1  (após confirmar recebimento)
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Pastilha de Freio C2",
+    "descricao": "Pastilha de freio dianteira para cenario 2",
+    "codigo": "PF-C2R-001",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 100.00
+}
+
+###
+
+### [C2-05] Criar item sem saldo 2 (R$ 200,00)
+## ► Copiar "id" para @c2ItemSemSaldo2Id
+## Na OS: quantidade 1 → status A_RECEBER
+## Estoque antes:  disponivel=0, reservado=0
+## Estoque depois: disponivel=0, reservado=1  (após confirmar recebimento)
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Disco de Freio C2",
+    "descricao": "Disco de freio dianteiro para cenario 2",
+    "codigo": "DF-C2R-001",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 200.00
+}
+
+###
+
+### [C2-06] Criar OS
+## ► Copiar "id" para @c2OrdemServicoId
+## Esperado: 201 — status RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c2ClienteId}}",
+    "veiculo_id": "{{c2VeiculoId}}",
+    "queixa_inicial": "Freios rangendo e pedal mole."
+}
+
+###
+
+### [C2-07] Iniciar diagnóstico
+## Esperado: 200 — status EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C2-08] Registrar diagnóstico
+## Esperado: 200
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Pastilhas e discos desgastados. Necessario substituicao completa do sistema de freios."
+}
+
+###
+
+### [C2-09] Adicionar serviço à OS
+## Esperado: 201
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c2ServicoId}}",
+    "observacao": "Troca completa conforme diagnostico."
+}
+
+###
+
+### [C2-10] Adicionar item sem saldo 1 (quantidade: 1)
+## ► Copiar "id" do item retornado para @c2OrdemServicoItemAReceber1Id
+## Esperado: 201 — status A_RECEBER
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c2ItemSemSaldo1Id}}",
+    "quantidade": 1
+}
+
+###
+
+### [C2-11] Adicionar item sem saldo 2 (quantidade: 1)
+## ► Copiar "id" do item retornado para @c2OrdemServicoItemAReceber2Id
+## Esperado: 201 — status A_RECEBER
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c2ItemSemSaldo2Id}}",
+    "quantidade": 1
+}
+
+###
+
+### [C2-12] Concluir diagnóstico
+## Esperado: 200 — status DIAGNOSTICO_CONCLUIDO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C2-13] Gerar orçamento
+## Esperado: 201
+## Orcamento.status = COMUNICADO
+## OS.status        = AGUARDANDO_APROVACAO
+## total_servicos   = 150.00
+## total_itens      = 300.00
+## total_geral      = 450.00
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C2-14] Aprovar orçamento
+## Esperado: 200
+## Orcamento.status → APROVADO
+## OS.status        → AGUARDANDO_ITENS  (há dois itens A_RECEBER)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C2-15] ★ CONFIRMAR RECEBIMENTO DO ITEM 1 ★
+## Esperado: 200
+## item1.status  → RESERVADO
+## item2.status  → A_RECEBER  (ainda pendente)
+## OS.status     → AGUARDANDO_ITENS  (ainda há item A_RECEBER ativo)
+## ItemEstoque1.quantidade_disponivel → mantém 0
+## ItemEstoque1.quantidade_reservada  → 0 + 1 = 1
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/itens/{{c2OrdemServicoItemAReceber1Id}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C2-16] Consultar estoque item 1 após primeiro recebimento
+## Esperado: disponivel=0, reservado=1
+GET {{baseUrl}}/api/v1/itens-estoque/{{c2ItemSemSaldo1Id}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C2-17] ★ CONFIRMAR RECEBIMENTO DO ITEM 2 ★
+## Esperado: 200
+## item1.status  → RESERVADO
+## item2.status  → RESERVADO
+## OS.status     → APROVADA  (não há mais item A_RECEBER ativo)
+## ItemEstoque2.quantidade_disponivel → mantém 0
+## ItemEstoque2.quantidade_reservada  → 0 + 1 = 1
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/itens/{{c2OrdemServicoItemAReceber2Id}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C2-18] Consultar estoque item 2 após segundo recebimento
+## Esperado: disponivel=0, reservado=1
+GET {{baseUrl}}/api/v1/itens-estoque/{{c2ItemSemSaldo2Id}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C2-19] Detalhar OS após confirmação de todos os itens
+## Esperado:
+##   - "status": "APROVADA"
+##   - item 1 com status "RESERVADO"
+##   - item 2 com status "RESERVADO"
+##   - nenhum item ativo com status "A_RECEBER"
+GET {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+
+## ============================================================
+## CENÁRIO 3 — ADMIN PODE CONFIRMAR RECEBIMENTO
+##
+## Objetivo:
+##   Garantir que o perfil Administrador tem permissão
+##   para confirmar recebimento de item.
+##
+## Resultado esperado:
+##   HTTP 200
+##   item.status → RESERVADO
+##   OS.status   → APROVADA
+## ============================================================
+
+###
+
+### [C3-01] Criar cliente
+## ► Copiar "id" para @c3ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo_pessoa": "PJ",
+    "nome_razao_social": "Transportadora Admin C3 Ltda",
+    "cpf_cnpj": "11222333000181",
+    "telefone": "11991110033",
+    "email": "admin.receb.c3@example.com",
+    "cep": "04538133",
+    "logradouro": "Av. Brigadeiro Faria Lima",
+    "numero": "3400",
+    "complemento": "Sala 10",
+    "bairro": "Itaim Bibi",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C3-02] Criar veículo para o cliente
+## ► Copiar "id" para @c3VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "cliente_id": "{{c3ClienteId}}",
+    "placa": "REC3C03",
+    "marca": "Ford",
+    "modelo": "Transit",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2022,
+    "cor": "Branco"
+}
+
+###
+
+### [C3-03] Criar serviço (R$ 200,00)
+## ► Copiar "id" para @c3ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Alinhamento e Balanceamento C3",
+    "descricao": "Alinhamento da direcao e balanceamento das rodas",
+    "valor_base": 200.00,
+    "tempo_medio_minutos": 45
+}
+
+###
+
+### [C3-04] Criar item SEM saldo (R$ 150,00)
+## ► Copiar "id" para @c3ItemSemSaldoId
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tipo": "PECA",
+    "nome": "Rolamento de Roda C3",
+    "descricao": "Rolamento de roda dianteira para cenario 3",
+    "codigo": "RR-C3R-001",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 150.00
+}
+
+###
+
+### [C3-05] Criar OS
+## ► Copiar "id" para @c3OrdemServicoId
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c3ClienteId}}",
+    "veiculo_id": "{{c3VeiculoId}}",
+    "queixa_inicial": "Barulho na roda dianteira direita em curvas."
+}
+
+###
+
+### [C3-06] Iniciar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C3-07] Registrar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Rolamento de roda com folga excessiva. Necessario substituicao."
+}
+
+###
+
+### [C3-08] Adicionar serviço
+POST {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c3ServicoId}}"
+}
+
+###
+
+### [C3-09] Adicionar item SEM saldo (quantidade: 1)
+## ► Copiar "id" do item retornado para @c3OrdemServicoItemAReceberId
+## Esperado: status A_RECEBER
+POST {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c3ItemSemSaldoId}}",
+    "quantidade": 1
+}
+
+###
+
+### [C3-10] Concluir diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C3-11] Gerar orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C3-12] Aprovar orçamento
+## Esperado: OS.status → AGUARDANDO_ITENS
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C3-13] ★ ADMIN CONFIRMA RECEBIMENTO ★
+## Esperado: 200
+## HTTP 200 — admin tem permissão
+## item.status → RESERVADO
+## OS.status   → APROVADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/itens/{{c3OrdemServicoItemAReceberId}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C3-14] Detalhar OS (validar APROVADA)
+GET {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+## ============================================================
+## CENÁRIOS NEGATIVOS
+## ============================================================
+##
+## Para os negativos que precisam de uma OS em AGUARDANDO_ITENS:
+##   Usar @negOsAguardandoId e @negItemAReceberId.
+##   Podem ser preparados manualmente executando o fluxo dos
+##   cenários acima ou reaproveitando IDs do Cenário 1 / 2 / 3
+##   ANTES de confirmar recebimento.
+##
+##   Alternativamente, usar @c1OrdemServicoId + @c1OrdemServicoItemAReceberId
+##   se o Cenário 1 ainda não foi executado até a etapa C1-13.
+## ============================================================
+
+###
+
+### [NEG-01] Sem autenticação — deve retornar 401 ou 403
+## Não informar Authorization.
+## Esperado: 401 ou 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOsAguardandoId}}/itens/{{negItemAReceberId}}/confirmar-recebimento HTTP/1.1
+
+###
+
+### [NEG-02] Mecânico tenta confirmar recebimento — deve retornar 403
+## Mecânico não tem permissão para confirmar recebimento.
+## Esperado: 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOsAguardandoId}}/itens/{{negItemAReceberId}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [NEG-03] Confirmar item já RESERVADO — deve retornar 422
+## Após confirmar recebimento com sucesso (ex: Cenário 1, passo C1-13),
+## tentar confirmar o mesmo item novamente.
+## O item já está RESERVADO → não pode ser confirmado novamente.
+## ► Preencher @negItemReservadoId com o ID do item já RESERVADO
+##   (ex: copiar @c1OrdemServicoItemAReceberId após executar C1-13)
+## Esperado: 422 — "Só é possível confirmar recebimento de item com status 'A_RECEBER'."
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/itens/{{negItemReservadoId}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [NEG-04] OS fora de AGUARDANDO_ITENS — deve retornar 422
+## Preparar (ou reaproveitar) uma OS que chegou até DIAGNOSTICO_CONCLUIDO
+## com um item A_RECEBER, mas sem aprovar orçamento.
+## Neste estado a OS está em DIAGNOSTICO_CONCLUIDO, não AGUARDANDO_ITENS.
+## ► Preencher @negOsDiagnosticoConcluido com o ID dessa OS
+## Esperado: 422 — "Só é possível confirmar recebimento de item para OS com status 'AGUARDANDO_ITENS'."
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOsDiagnosticoConcluido}}/itens/{{negItemAReceberId}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [NEG-05] Item inexistente — deve retornar 404
+## Usar um UUID válido mas que não existe como OrdemServicoItem.
+## Esperado: 404 — "Item da ordem de serviço não encontrado."
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOsAguardandoId}}/itens/00000000-0000-0000-0000-000000000099/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [NEG-06] Item pertencente a outra OS — deve retornar 404
+## Preparar duas OS distintas em AGUARDANDO_ITENS (ou reaproveitar Cenário 2).
+## Usar o ordem_servico_id de uma OS e o ordem_servico_item_id de outra.
+## ► Preencher @negItemOsOutraId com o ID do item da OS B
+##   e usar o ID da OS A no path (ex: c2OrdemServicoId + c1OrdemServicoItemAReceberId)
+## Esperado: 404 — "Item informado não pertence à ordem de serviço."
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/itens/{{negItemOsOutraId}}/confirmar-recebimento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}

@@ -38,6 +38,11 @@ class ItemJaAdicionadoNaOrdemServicoError(DomainException):
     pass
 
 
+class ItemOrdemServicoStatusInvalidoError(DomainException):
+    """Lançada quando o item da OS não está no status esperado para a operação."""
+    pass
+
+
 class OrcamentoInvalidoError(DomainException):
     """Lançada quando os dados do orçamento são inválidos."""
     pass

@@ -46,3 +46,27 @@ class OrdemServicoItem:
             raise OrdemServicoInvalidaError("A quantidade do item deve ser maior que zero.")
         if self.valor_unitario < Decimal("0"):
             raise OrdemServicoInvalidaError("O valor unitário do item não pode ser negativo.")
+
+    def confirmar_recebimento(self) -> "OrdemServicoItem":
+        """Confirma recebimento do item (A_RECEBER -> RESERVADO).
+
+        Retorna nova instância com status RESERVADO.
+        Lança ItemOrdemServicoStatusInvalidoError se o item não estiver A_RECEBER.
+        """
+        from app.modules.ordens_servico.domain.exceptions import ItemOrdemServicoStatusInvalidoError
+
+        if self.status != StatusItemNaOS.A_RECEBER:
+            raise ItemOrdemServicoStatusInvalidoError(
+                f"Só é possível confirmar recebimento de item com status "
+                f"'A_RECEBER'. Status atual: '{self.status.value}'."
+            )
+        return OrdemServicoItem(
+            id=self.id,
+            ordem_servico_id=self.ordem_servico_id,
+            item_estoque_id=self.item_estoque_id,
+            nome_item=self.nome_item,
+            tipo_item=self.tipo_item,
+            quantidade=self.quantidade,
+            valor_unitario=self.valor_unitario,
+            status=StatusItemNaOS.RESERVADO,
+        )

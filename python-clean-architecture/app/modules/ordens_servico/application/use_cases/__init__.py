@@ -43,6 +43,9 @@ from app.modules.ordens_servico.application.use_cases.aprovar_orcamento import (
 from app.modules.ordens_servico.application.use_cases.recusar_orcamento import (
     RecusarOrcamentoUseCase,
 )
+from app.modules.ordens_servico.application.use_cases.confirmar_recebimento_item import (
+    ConfirmarRecebimentoItemDaOrdemServicoUseCase,
+)
 
 __all__ = [
     "CriarOrdemServicoUseCase",
@@ -60,4 +63,5 @@ __all__ = [
     "ListarComunicacoesOrcamentoUseCase",
     "AprovarOrcamentoUseCase",
     "RecusarOrcamentoUseCase",
+    "ConfirmarRecebimentoItemDaOrdemServicoUseCase",
 ]

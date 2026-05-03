@@ -31,6 +31,7 @@ from app.modules.ordens_servico.domain.entities.ordem_servico import StatusOrdem
 from app.modules.ordens_servico.domain.exceptions import (
     ClienteSemContatoParaOrcamentoError,
     ItemJaAdicionadoNaOrdemServicoError,
+    ItemOrdemServicoStatusInvalidoError,
     OrcamentoJaExisteParaOrdemServicoError,
     OrcamentoNaoEncontradoError,
     OrcamentoStatusInvalidoError,
@@ -47,6 +48,7 @@ from app.modules.ordens_servico.presentation.dependencies import (
     AdicionarServicoDep,
     AprovarOrcamentoDep,
     ConcluirDiagnosticoDep,
+    ConfirmarRecebimentoItemDep,
     CriarOrdemServicoDep,
     GerarOrcamentoDep,
     IniciarDiagnosticoDep,
@@ -506,4 +508,43 @@ async def recusar_orcamento(
     except (OrdemServicoNaoEncontradaError, OrcamentoNaoEncontradoError) as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except (OrdemServicoTransicaoInvalidaError, OrcamentoStatusInvalidoError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Confirmar Recebimento de Item A_RECEBER
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/itens/{ordem_servico_item_id}/confirmar-recebimento",
+    summary="Confirmar Recebimento de Item Pendente",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS ou item não encontrado", "model": ErrorResponse},
+        422: {"description": "Status inválido para a operação", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def confirmar_recebimento_item(
+    ordem_servico_id: UUID,
+    ordem_servico_item_id: UUID,
+    usecase: ConfirmarRecebimentoItemDep,
+) -> OrdemServicoDetalheResponse:
+    try:
+        return await usecase.execute(
+            str(ordem_servico_id),
+            str(ordem_servico_item_id),
+        )
+    except OrdemServicoNaoEncontradaError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OrdemServicoItemNaoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ItemEstoqueNaoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OrdemServicoTransicaoInvalidaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except ItemOrdemServicoStatusInvalidoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except InvalidIDError as exc:
         raise HTTPException(status_code=422, detail=str(exc))

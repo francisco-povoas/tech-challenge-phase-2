@@ -15,7 +15,7 @@ from app.modules.ordens_servico.domain.entities.orcamento_comunicacao import (
     CanalComunicacaoOrcamento,
     OrcamentoComunicacao,
 )
-from app.modules.ordens_servico.domain.exceptions import OrcamentoInvalidoError
+from app.modules.ordens_servico.domain.exceptions import OrcamentoInvalidoError, OrcamentoStatusInvalidoError
 
 
 # ---------------------------------------------------------------------------
@@ -250,3 +250,150 @@ class TestOrcamentoComunicacaoEntidade:
         )
         assert com.orcamento_id == orc_id
         assert com.ordem_servico_id == os_id
+
+
+# ---------------------------------------------------------------------------
+# Orcamento.aprovar()
+# ---------------------------------------------------------------------------
+
+class TestOrcamentoAprovar:
+    def test_deve_aprovar_orcamento_comunicado(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        aprovado = orc.aprovar(respondido_em=agora)
+
+        assert aprovado.status == StatusOrcamento.APROVADO
+        assert aprovado.respondido_em is not None
+        assert aprovado.motivo_recusa is None
+        # imutabilidade: original inalterado
+        assert orc.status == StatusOrcamento.COMUNICADO
+
+    def test_aprovacao_preserva_totais(self):
+        agora = _agora()
+        orc = _orcamento_fake(
+            total_servicos=Decimal("200.00"),
+            total_itens=Decimal("100.00"),
+            status=StatusOrcamento.COMUNICADO,
+            comunicado_em=agora,
+        )
+        aprovado = orc.aprovar(respondido_em=agora)
+
+        assert aprovado.total_servicos == Decimal("200.00")
+        assert aprovado.total_itens == Decimal("100.00")
+        assert aprovado.total_geral == Decimal("300.00")
+        assert aprovado.observacao == orc.observacao
+        assert aprovado.ordem_servico_id == orc.ordem_servico_id
+
+    def test_aprovacao_preenche_respondido_em(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        aprovado = orc.aprovar(respondido_em=agora)
+        assert aprovado.respondido_em == agora
+
+    @pytest.mark.parametrize("status_invalido", [
+        StatusOrcamento.GERADO,
+        StatusOrcamento.APROVADO,
+        StatusOrcamento.RECUSADO,
+    ])
+    def test_nao_deve_aprovar_orcamento_fora_de_comunicado(self, status_invalido):
+        orc = _orcamento_fake(status=status_invalido)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            orc.aprovar(respondido_em=_agora())
+
+    def test_nao_deve_aprovar_orcamento_gerado(self):
+        orc = _orcamento_fake(status=StatusOrcamento.GERADO)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            orc.aprovar(respondido_em=_agora())
+
+    def test_nao_deve_aprovar_orcamento_aprovado(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        aprovado = orc.aprovar(respondido_em=agora)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            aprovado.aprovar(respondido_em=agora)
+
+    def test_nao_deve_aprovar_orcamento_recusado(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        recusado = orc.recusar(respondido_em=agora)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            recusado.aprovar(respondido_em=agora)
+
+
+# ---------------------------------------------------------------------------
+# Orcamento.recusar()
+# ---------------------------------------------------------------------------
+
+class TestOrcamentoRecusar:
+    def test_deve_recusar_orcamento_comunicado_com_motivo(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        recusado = orc.recusar(
+            respondido_em=agora,
+            motivo_recusa="Cliente nao aprovou o valor.",
+        )
+
+        assert recusado.status == StatusOrcamento.RECUSADO
+        assert recusado.respondido_em is not None
+        assert recusado.motivo_recusa == "Cliente nao aprovou o valor."
+        # imutabilidade
+        assert orc.status == StatusOrcamento.COMUNICADO
+
+    def test_deve_recusar_orcamento_comunicado_sem_motivo(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        recusado = orc.recusar(respondido_em=agora, motivo_recusa=None)
+
+        assert recusado.status == StatusOrcamento.RECUSADO
+        assert recusado.respondido_em is not None
+        assert recusado.motivo_recusa is None
+
+    def test_recusa_preenche_respondido_em(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        recusado = orc.recusar(respondido_em=agora)
+        assert recusado.respondido_em == agora
+
+    def test_recusa_preserva_totais(self):
+        agora = _agora()
+        orc = _orcamento_fake(
+            total_servicos=Decimal("180.00"),
+            total_itens=Decimal("390.00"),
+            status=StatusOrcamento.COMUNICADO,
+            comunicado_em=agora,
+        )
+        recusado = orc.recusar(respondido_em=agora, motivo_recusa="Caro demais")
+
+        assert recusado.total_servicos == Decimal("180.00")
+        assert recusado.total_itens == Decimal("390.00")
+        assert recusado.total_geral == Decimal("570.00")
+        assert recusado.ordem_servico_id == orc.ordem_servico_id
+
+    @pytest.mark.parametrize("status_invalido", [
+        StatusOrcamento.GERADO,
+        StatusOrcamento.APROVADO,
+        StatusOrcamento.RECUSADO,
+    ])
+    def test_nao_deve_recusar_orcamento_fora_de_comunicado(self, status_invalido):
+        orc = _orcamento_fake(status=status_invalido)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            orc.recusar(respondido_em=_agora())
+
+    def test_nao_deve_recusar_orcamento_gerado(self):
+        orc = _orcamento_fake(status=StatusOrcamento.GERADO)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            orc.recusar(respondido_em=_agora())
+
+    def test_nao_deve_recusar_orcamento_aprovado(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        aprovado = orc.aprovar(respondido_em=agora)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            aprovado.recusar(respondido_em=agora)
+
+    def test_nao_deve_recusar_orcamento_ja_recusado(self):
+        agora = _agora()
+        orc = _orcamento_fake(status=StatusOrcamento.COMUNICADO, comunicado_em=agora)
+        recusado = orc.recusar(respondido_em=agora)
+        with pytest.raises(OrcamentoStatusInvalidoError):
+            recusado.recusar(respondido_em=agora)

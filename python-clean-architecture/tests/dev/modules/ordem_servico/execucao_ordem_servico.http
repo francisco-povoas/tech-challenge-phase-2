@@ -1,0 +1,1511 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Execute as requisições de login abaixo e copie o valor de "access_token"
+## para as variáveis correspondentes.
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NGE3ZDg5Yi00ZTk2LTQxMTUtYThhZC1jYmMxZjJlY2RiZWIiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc4NDExNDB9.N5Qfeux-L0xMBXSPlY2i9uH8mGgb_0rsWlSQKmRr32k
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5MGVmMmUyZS1lZTdmLTRkZGEtYmQzMy1hMzUwZmY5ZDg5MTgiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3Nzg0MTE3NH0.tJTS9J5It_sIiCNORqPWi-8G6xbydnZND0QUeI2KV6o
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTQ0MjFmNS02YTU0LTQzMTMtOTk0OC1mN2MwN2Q5MmZhZDEiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3ODQxMjAxfQ.LArKlnwHXmEWS8wF9yThS2zezXDHcDLvX5fbP2E1Vbs
+
+## ============================================================
+## IDs — Cenário 1: Fluxo feliz com Mecânico
+## Preencher após cada criação na seção CENÁRIO 1.
+## ============================================================
+
+@c1ClienteId = f3de9b7d-070c-483e-af45-9a46c7293b0b
+@c1VeiculoId = 0bfcf29a-a62c-4da3-892d-ceb73d298693
+@c1ServicoId = a15e0e1f-fc51-404b-bcd9-d7805304a727
+@c1ItemEstoqueId = 366586cd-d3fe-4c58-b4f2-8f54f2525a28
+@c1OrdemServicoId = c6b5a9c4-0163-42dc-b47d-5473a5778e87
+@c1OrdemServicoServicoId = 2ebb7939-69c5-4e63-be73-810c3d947cd0
+@c1OrdemServicoItemId = a2ea9d51-94c6-4fe5-a111-5f784da24397
+
+## ============================================================
+## IDs — Cenário 2: Sobrescrever tempo executado
+## Preencher após cada criação na seção CENÁRIO 2.
+## ============================================================
+
+@c2ClienteId =
+@c2VeiculoId =
+@c2ServicoId =
+@c2ItemEstoqueId =
+@c2OrdemServicoId =
+@c2OrdemServicoServicoId =
+@c2OrdemServicoItemId =
+
+## ============================================================
+## IDs — Cenário 3: Admin executa fluxo
+## Preencher após cada criação na seção CENÁRIO 3.
+## ============================================================
+
+@c3ClienteId =
+@c3VeiculoId =
+@c3ServicoId =
+@c3ItemEstoqueId =
+@c3OrdemServicoId =
+@c3OrdemServicoServicoId =
+@c3OrdemServicoItemId =
+
+## ============================================================
+## IDs — Cenário 4: OS com item A_RECEBER não pode iniciar execução
+## Preencher após cada criação na seção CENÁRIO 4.
+## ============================================================
+
+@c4ClienteId =
+@c4VeiculoId =
+@c4ServicoId =
+@c4ItemSemSaldoId =
+@c4OrdemServicoId =
+@c4OrdemServicoServicoId =
+@c4OrdemServicoItemAReceberId =
+
+## ============================================================
+## IDs — Cenário 5: Finalização bloqueada por serviço sem tempo
+## Preencher após cada criação na seção CENÁRIO 5.
+## ============================================================
+
+@c5ClienteId =
+@c5VeiculoId =
+@c5Servico1Id =
+@c5Servico2Id =
+@c5ItemEstoqueId =
+@c5OrdemServicoId =
+@c5OrdemServicoServico1Id =
+@c5OrdemServicoServico2Id =
+@c5OrdemServicoItemId =
+
+## ============================================================
+## IDs — Cenários negativos
+## Preencher conforme necessário.
+## (reaproveitar OS APROVADA e EM_EXECUCAO dos cenários acima)
+## ============================================================
+
+@negOrdemServicoId =
+@negServicoOsId =
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA
+##
+## [PREPARAÇÃO — AUTENTICAÇÃO]
+##  AUTH-01. Login admin
+##  AUTH-02. Criar usuário Atendente
+##  AUTH-03. Login Atendente
+##  AUTH-04. Criar usuário Mecânico
+##  AUTH-05. Login Mecânico
+##
+## [CENÁRIO 1 — FLUXO FELIZ COM MECÂNICO]
+##  C1-01.  Criar cliente
+##  C1-02.  Criar veículo
+##  C1-03.  Criar serviço (R$ 180,00)
+##  C1-04.  Criar item COM saldo (qtd 10, R$ 85,00)
+##  C1-05.  Criar OS → status RECEBIDA
+##  C1-06.  Iniciar diagnóstico → status EM_DIAGNOSTICO
+##  C1-07.  Registrar diagnóstico
+##  C1-08.  Adicionar serviço → copiar id para @c1OrdemServicoServicoId
+##  C1-09.  Adicionar item (qtd 2 → RESERVADO) → copiar id para @c1OrdemServicoItemId
+##  C1-10.  Consultar estoque antes (disponivel=8, reservado=2)
+##  C1-11.  Concluir diagnóstico → status DIAGNOSTICO_CONCLUIDO
+##  C1-12.  Gerar orçamento → status COMUNICADO, OS → AGUARDANDO_APROVACAO
+##  C1-13.  Aprovar orçamento → OS → APROVADA
+##  C1-14.  ★ Iniciar execução → OS → EM_EXECUCAO, item → EM_USO ★
+##  C1-15.  Detalhar OS (status=EM_EXECUCAO, item=EM_USO)
+##  C1-16.  Consultar estoque (disponivel=8, reservado=2 — não muda)
+##  C1-17.  ★ Registrar tempo executado (75 min) ★
+##  C1-18.  Detalhar OS (tempo_executado_minutos=75)
+##  C1-19.  ★ Finalizar OS → status FINALIZADA ★
+##  C1-20.  Detalhar OS (status=FINALIZADA, item=EM_USO — não vira CONSUMIDO)
+##  C1-21.  Consultar estoque (disponivel=8, reservado=2 — não muda)
+##
+## [CENÁRIO 2 — SOBRESCREVER TEMPO EXECUTADO]
+##  C2-01 a C2-13. Preparar OS em EM_EXECUCAO (fluxo completo)
+##  C2-14.  ★ Registrar tempo (60 min) ★
+##  C2-15.  ★ Sobrescrever tempo (90 min) ★
+##  C2-16.  Detalhar OS (tempo_executado_minutos=90)
+##
+## [CENÁRIO 3 — ADMIN EXECUTA FLUXO]
+##  C3-01 a C3-13. Preparar OS em APROVADA
+##  C3-14.  ★ Iniciar execução com tokenAdmin ★
+##  C3-15.  ★ Registrar tempo com tokenAdmin ★
+##  C3-16.  ★ Finalizar com tokenAdmin ★
+##  C3-17.  Detalhar OS (status=FINALIZADA)
+##
+## [CENÁRIO 4 — OS COM ITEM A_RECEBER NÃO INICIA EXECUÇÃO]
+##  C4-01 a C4-12. Preparar OS em AGUARDANDO_ITENS (item sem saldo → A_RECEBER)
+##  C4-13.  ★ Tentar iniciar execução → 422 ★
+##  C4-14.  Detalhar OS (status permanece AGUARDANDO_ITENS)
+##  C4-15.  Consultar estoque (disponivel=0, reservado=0)
+##
+## [CENÁRIO 5 — FINALIZAÇÃO BLOQUEADA POR SERVIÇO SEM TEMPO]
+##  C5-01 a C5-15. Preparar OS em EM_EXECUCAO com 2 serviços
+##  C5-16.  Registrar tempo apenas no serviço 1
+##  C5-17.  ★ Tentar finalizar → 422 ★
+##  C5-18.  Detalhar OS (status permanece EM_EXECUCAO)
+##  C5-19.  Registrar tempo no serviço 2
+##  C5-20.  ★ Finalizar com sucesso → FINALIZADA ★
+##
+## [CENÁRIOS NEGATIVOS]
+##  NEG-01. Sem token → 401/403
+##  NEG-02. Atendente não inicia execução → 403
+##  NEG-03. Atendente não registra tempo → 403
+##  NEG-04. Atendente não finaliza → 403
+##  NEG-05. Tempo zero → 422
+##  NEG-06. Tempo negativo → 422
+##  NEG-07. Registrar tempo em OS fora de EM_EXECUCAO → 422
+##  NEG-08. Registrar tempo em serviço inexistente → 404
+##  NEG-09. Iniciar execução duas vezes → 422
+##  NEG-10. Finalizar duas vezes → 422
+## ============================================================
+
+
+## ============================================================
+## PREPARAÇÃO — AUTENTICAÇÃO
+## ============================================================
+
+### [AUTH-01] Login admin
+## ► Copiar "access_token" para @tokenAdmin
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@example.com&password=admin123
+
+###
+
+### [AUTH-02] Criar usuário Atendente
+## (pode pular se já existir — ir direto para AUTH-03)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Atendente Execucao",
+    "email": "atendente.execucao@example.com",
+    "senha": "senha123",
+    "perfis": ["Atendente"]
+}
+
+###
+
+### [AUTH-03] Login Atendente
+## ► Copiar "access_token" para @tokenAtendente
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=atendente.execucao@example.com&password=senha123
+
+###
+
+### [AUTH-04] Criar usuário Mecânico
+## (pode pular se já existir — ir direto para AUTH-05)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Mecanico Execucao",
+    "email": "mecanico.execucao@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
+}
+
+###
+
+### [AUTH-05] Login Mecânico
+## ► Copiar "access_token" para @tokenMecanico
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=mecanico.execucao@example.com&password=senha123
+
+
+## ============================================================
+## CENÁRIO 1 — FLUXO FELIZ COM MECÂNICO
+##
+## Objetivo:
+##   Validar o fluxo completo de execução via Mecânico:
+##     APROVADA → EM_EXECUCAO → registrar tempo → FINALIZADA
+##
+## Validações:
+##   - item RESERVADO vira EM_USO ao iniciar execução;
+##   - item permanece EM_USO após finalizar (NÃO vira CONSUMIDO nesta fase);
+##   - estoque não muda ao iniciar execução;
+##   - estoque não muda ao finalizar;
+##   - tempo_executado_minutos aparece no detalhe da OS.
+##
+## IMPORTANTE:
+##   FINALIZADA ≠ ENTREGUE.
+##   A baixa de quantidade_reservada ocorre apenas na fase de ENTREGA (fase futura).
+##
+## Totais esperados do orçamento:
+##   total_servicos = 180.00   (1 × R$ 180,00)
+##   total_itens    = 170.00   (2 × R$  85,00)
+##   total_geral    = 350.00
+## ============================================================
+
+### [C1-01] Criar cliente (com email e telefone — obrigatório para envio do orçamento)
+## ► Copiar "id" para @c1ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Carlos Execucao C1",
+    "cpf_cnpj": "52998224725",
+    "telefone": "11988880001",
+    "email": "carlos.exec.c1@example.com",
+    "cep": "01310100",
+    "logradouro": "Av. Paulista",
+    "numero": "200",
+    "complemento": null,
+    "bairro": "Bela Vista",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C1-02] Criar veículo
+## ► Copiar "id" para @c1VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c1ClienteId}}",
+    "placa": "EXE1C01",
+    "marca": "Honda",
+    "modelo": "Civic",
+    "ano_fabricacao": 2021,
+    "ano_modelo": 2022,
+    "cor": "Prata"
+}
+
+###
+
+### [C1-03] Criar serviço
+## ► Copiar "id" para @c1ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca de Oleo C1 Execucao",
+    "descricao": "Troca de oleo do motor e filtro",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 60
+}
+
+###
+
+### [C1-04] Criar item de estoque COM saldo (10 unidades disponíveis)
+## ► Copiar "id" para @c1ItemEstoqueId
+## Ao adicionar 2 unidades na OS → status RESERVADO, estoque: disponivel=8, reservado=2
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "INSUMO",
+    "nome": "Oleo Motor 5W30 C1",
+    "descricao": "Oleo sintetico 5W30 litro para cenario 1",
+    "codigo": "OL-C1E-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 2,
+    "valor_unitario": 85.00
+}
+
+###
+
+### [C1-05] Criar OS
+## ► Copiar "id" para @c1OrdemServicoId
+## Esperado: 201 — status RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c1ClienteId}}",
+    "veiculo_id": "{{c1VeiculoId}}",
+    "queixa_inicial": "Motor com ruido ao acelerar e consumo de oleo elevado."
+}
+
+###
+
+### [C1-06] Iniciar diagnóstico
+## Esperado: 200 — status EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-07] Registrar diagnóstico
+## Esperado: 200 — campo diagnostico preenchido
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Nivel de oleo baixo e contaminado. Necessario troca de oleo e filtro."
+}
+
+###
+
+### [C1-08] Adicionar serviço à OS
+## ► Copiar "id" do serviço da OS retornado para @c1OrdemServicoServicoId
+## Esperado: 201 — cancelado: false, tempo_executado_minutos: null
+POST {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c1ServicoId}}",
+    "observacao": "Troca de oleo conforme diagnostico."
+}
+
+###
+
+### [C1-09] Adicionar item COM saldo (quantidade: 2)
+## ► Copiar "id" do item da OS retornado para @c1OrdemServicoItemId
+## Esperado: 201 — status RESERVADO
+## Estoque após reserva: disponivel=8, reservado=2
+POST {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c1ItemEstoqueId}}",
+    "quantidade": 2
+}
+
+###
+
+### [C1-10] Consultar estoque antes da execução
+## Esperado: disponivel=8, reservado=2
+## (item reservado no momento da adição à OS)
+GET {{baseUrl}}/api/v1/itens-estoque/{{c1ItemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C1-11] Concluir diagnóstico
+## Esperado: 200 — status DIAGNOSTICO_CONCLUIDO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-12] Gerar orçamento
+## Esperado: 201 — Orcamento.status COMUNICADO, OS → AGUARDANDO_APROVACAO
+## total_servicos=180.00, total_itens=170.00, total_geral=350.00
+POST {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C1-13] Aprovar orçamento
+## Esperado: 200 — Orcamento.status APROVADO, OS → APROVADA
+## (todos os itens RESERVADO → sem A_RECEBER → OS vai direto para APROVADA)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C1-14] ★ Iniciar execução da OS ★
+## Esperado: 200 — OS.status = EM_EXECUCAO
+## Itens RESERVADO → EM_USO
+## Estoque NÃO muda ao iniciar execução
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-15] Detalhar OS após iniciar execução
+## Esperado:
+##   status = EM_EXECUCAO
+##   item da OS: status = EM_USO
+##   serviço: tempo_executado_minutos = null (ainda não registrado)
+GET {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-16] Consultar estoque após iniciar execução
+## Esperado: disponivel=8, reservado=2
+## IMPORTANTE: estoque não muda ao iniciar execução.
+## O item já estava reservado desde a adição à OS no diagnóstico.
+GET {{baseUrl}}/api/v1/itens-estoque/{{c1ItemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C1-17] ★ Registrar tempo executado (75 min) ★
+## Esperado: 200 — tempo_executado_minutos = 75
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/servicos/{{c1OrdemServicoServicoId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 75
+}
+
+###
+
+### [C1-18] Detalhar OS após registrar tempo
+## Esperado:
+##   OS.status = EM_EXECUCAO
+##   serviço: tempo_executado_minutos = 75
+GET {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-19] ★ Finalizar OS ★
+## Esperado: 200 — OS.status = FINALIZADA
+## Todos os serviços ativos possuem tempo_executado_minutos → finalização permitida
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-20] Detalhar OS após finalizar
+## Esperado:
+##   OS.status = FINALIZADA
+##   item da OS: status = EM_USO  (NÃO vira CONSUMIDO nesta fase)
+##   serviço: tempo_executado_minutos = 75
+## IMPORTANTE:
+##   FINALIZADA ≠ ENTREGUE.
+##   Item EM_USO → CONSUMIDO ocorre apenas na fase de entrega (futura).
+GET {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C1-21] Consultar estoque após finalizar
+## Esperado: disponivel=8, reservado=2
+## IMPORTANTE: estoque não muda ao finalizar.
+## A baixa de quantidade_reservada ocorrerá apenas na fase de entrega.
+GET {{baseUrl}}/api/v1/itens-estoque/{{c1ItemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+## ============================================================
+## CENÁRIO 2 — SOBRESCREVER TEMPO EXECUTADO
+##
+## Objetivo:
+##   Validar que, no MVP, o tempo executado pode ser sobrescrito
+##   enquanto a OS está EM_EXECUCAO.
+##
+## Fluxo:
+##   1ª vez: registrar 60 min  → tempo_executado_minutos = 60
+##   2ª vez: registrar 90 min  → tempo_executado_minutos = 90 (sobrescreve)
+##
+## Nesta fase, não há histórico de alteração de tempo.
+## O último valor registrado prevalece.
+## ============================================================
+
+### [C2-01] Criar cliente
+## ► Copiar "id" para @c2ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Marina Execucao C2",
+    "cpf_cnpj": "47612028053",
+    "telefone": "11988880002",
+    "email": "marina.exec.c2@example.com",
+    "cep": "01310100",
+    "logradouro": "Rua Augusta",
+    "numero": "300",
+    "complemento": null,
+    "bairro": "Consolacao",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C2-02] Criar veículo
+## ► Copiar "id" para @c2VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c2ClienteId}}",
+    "placa": "EXE2C02",
+    "marca": "Toyota",
+    "modelo": "Corolla",
+    "ano_fabricacao": 2020,
+    "ano_modelo": 2020,
+    "cor": "Branco"
+}
+
+###
+
+### [C2-03] Criar serviço
+## ► Copiar "id" para @c2ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Alinhamento e Balanceamento C2",
+    "descricao": "Alinhamento e balanceamento das rodas",
+    "valor_base": 120.00,
+    "tempo_medio_minutos": 45
+}
+
+###
+
+### [C2-04] Criar item de estoque COM saldo
+## ► Copiar "id" para @c2ItemEstoqueId
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Pastilha de Freio C2",
+    "descricao": "Pastilha dianteira para cenario 2",
+    "codigo": "PF-C2E-002",
+    "quantidade_disponivel": 8,
+    "quantidade_minima": 2,
+    "valor_unitario": 95.00
+}
+
+###
+
+### [C2-05] Criar OS
+## ► Copiar "id" para @c2OrdemServicoId
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c2ClienteId}}",
+    "veiculo_id": "{{c2VeiculoId}}",
+    "queixa_inicial": "Volante tremendo ao frear e puxando para o lado."
+}
+
+###
+
+### [C2-06] Iniciar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C2-07] Registrar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Pastilhas com desgaste avancado e rodas desalinhadas."
+}
+
+###
+
+### [C2-08] Adicionar serviço
+## ► Copiar "id" do serviço da OS retornado para @c2OrdemServicoServicoId
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c2ServicoId}}",
+    "observacao": "Alinhamento e troca de pastilhas."
+}
+
+###
+
+### [C2-09] Adicionar item (quantidade: 1)
+## ► Copiar "id" do item da OS retornado para @c2OrdemServicoItemId
+## Esperado: status RESERVADO
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c2ItemEstoqueId}}",
+    "quantidade": 1
+}
+
+###
+
+### [C2-10] Concluir diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C2-11] Gerar orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C2-12] Aprovar orçamento
+## Esperado: OS → APROVADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C2-13] Iniciar execução
+## Esperado: OS → EM_EXECUCAO, item → EM_USO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C2-14] ★ Registrar tempo pela primeira vez (60 min) ★
+## Esperado: 200 — tempo_executado_minutos = 60
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/servicos/{{c2OrdemServicoServicoId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 60
+}
+
+###
+
+### [C2-15] ★ Sobrescrever tempo (90 min) ★
+## Esperado: 200 — tempo_executado_minutos = 90 (sobrescreve 60)
+## No MVP, sobrescrição é permitida enquanto OS estiver EM_EXECUCAO.
+## Não há histórico de alteração nesta fase.
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}}/servicos/{{c2OrdemServicoServicoId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 90
+}
+
+###
+
+### [C2-16] Detalhar OS após sobrescrição
+## Esperado:
+##   OS.status = EM_EXECUCAO
+##   serviço: tempo_executado_minutos = 90 (não 60)
+GET {{baseUrl}}/api/v1/ordens-servico/{{c2OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+## ============================================================
+## CENÁRIO 3 — ADMIN EXECUTA FLUXO
+##
+## Objetivo:
+##   Validar que Administrador pode iniciar execução,
+##   registrar tempo e finalizar OS.
+##
+## Esperado em todos os passos: HTTP 200.
+## OS.status final: FINALIZADA.
+## ============================================================
+
+### [C3-01] Criar cliente
+## ► Copiar "id" para @c3ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PJ",
+    "nome_razao_social": "Transportadora Admin C3 LTDA",
+    "cpf_cnpj": "97748745000173",
+    "telefone": "11988880003",
+    "email": "admin.exec.c3@example.com",
+    "cep": "04538132",
+    "logradouro": "Av. Brigadeiro Faria Lima",
+    "numero": "3477",
+    "complemento": "14 andar",
+    "bairro": "Itaim Bibi",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C3-02] Criar veículo
+## ► Copiar "id" para @c3VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c3ClienteId}}",
+    "placa": "EXE3C03",
+    "marca": "Ford",
+    "modelo": "Ka",
+    "ano_fabricacao": 2018,
+    "ano_modelo": 2019,
+    "cor": "Azul"
+}
+
+###
+
+### [C3-03] Criar serviço
+## ► Copiar "id" para @c3ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Revisao Freios C3 Admin",
+    "descricao": "Revisao completa do sistema de freios",
+    "valor_base": 250.00,
+    "tempo_medio_minutos": 90
+}
+
+###
+
+### [C3-04] Criar item de estoque COM saldo
+## ► Copiar "id" para @c3ItemEstoqueId
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Disco de Freio C3",
+    "descricao": "Disco dianteiro para cenario 3 admin",
+    "codigo": "DF-C3E-003",
+    "quantidade_disponivel": 6,
+    "quantidade_minima": 1,
+    "valor_unitario": 180.00
+}
+
+###
+
+### [C3-05] Criar OS
+## ► Copiar "id" para @c3OrdemServicoId
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c3ClienteId}}",
+    "veiculo_id": "{{c3VeiculoId}}",
+    "queixa_inicial": "Freio cedendo e ruido metalico ao frear."
+}
+
+###
+
+### [C3-06] Iniciar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C3-07] Registrar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Discos de freio com sulcos profundos. Necessario substituicao dos discos."
+}
+
+###
+
+### [C3-08] Adicionar serviço
+## ► Copiar "id" do serviço da OS retornado para @c3OrdemServicoServicoId
+POST {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c3ServicoId}}",
+    "observacao": "Revisao e substituicao dos discos."
+}
+
+###
+
+### [C3-09] Adicionar item (quantidade: 2)
+## ► Copiar "id" do item da OS retornado para @c3OrdemServicoItemId
+## Esperado: status RESERVADO
+POST {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c3ItemEstoqueId}}",
+    "quantidade": 2
+}
+
+###
+
+### [C3-10] Concluir diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C3-11] Gerar orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C3-12] Aprovar orçamento
+## Esperado: OS → APROVADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C3-13] ★ Admin inicia execução ★
+## Esperado: 200 — OS → EM_EXECUCAO, item → EM_USO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C3-14] ★ Admin registra tempo executado (120 min) ★
+## Esperado: 200 — tempo_executado_minutos = 120
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/servicos/{{c3OrdemServicoServicoId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "tempo_executado_minutos": 120
+}
+
+###
+
+### [C3-15] ★ Admin finaliza OS ★
+## Esperado: 200 — OS.status = FINALIZADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+### [C3-16] Detalhar OS após finalização pelo Admin
+## Esperado:
+##   OS.status = FINALIZADA
+##   item da OS: status = EM_USO
+##   serviço: tempo_executado_minutos = 120
+GET {{baseUrl}}/api/v1/ordens-servico/{{c3OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+## ============================================================
+## CENÁRIO 4 — OS COM ITEM A_RECEBER NÃO PODE INICIAR EXECUÇÃO
+##
+## Objetivo:
+##   Validar que OS no status AGUARDANDO_ITENS (com item A_RECEBER)
+##   não pode iniciar execução.
+##
+## Fluxo:
+##   Item sem saldo → adicionado à OS → status A_RECEBER
+##   Orçamento aprovado → OS fica AGUARDANDO_ITENS (não APROVADA)
+##   Tentar iniciar execução → deve falhar com 422
+##
+## Esperado ao tentar iniciar:
+##   HTTP 422
+##   OS.status permanece AGUARDANDO_ITENS
+##   item permanece A_RECEBER
+##   estoque permanece: disponivel=0, reservado=0
+## ============================================================
+
+### [C4-01] Criar cliente
+## ► Copiar "id" para @c4ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Roberto Execucao C4",
+    "cpf_cnpj": "65847180076",
+    "telefone": "11988880004",
+    "email": "roberto.exec.c4@example.com",
+    "cep": "01310100",
+    "logradouro": "Rua da Consolacao",
+    "numero": "400",
+    "complemento": null,
+    "bairro": "Consolacao",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C4-02] Criar veículo
+## ► Copiar "id" para @c4VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c4ClienteId}}",
+    "placa": "EXE4C04",
+    "marca": "Chevrolet",
+    "modelo": "Onix",
+    "ano_fabricacao": 2022,
+    "ano_modelo": 2022,
+    "cor": "Cinza"
+}
+
+###
+
+### [C4-03] Criar serviço
+## ► Copiar "id" para @c4ServicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca Correia Dentada C4",
+    "descricao": "Substituicao da correia dentada",
+    "valor_base": 320.00,
+    "tempo_medio_minutos": 120
+}
+
+###
+
+### [C4-04] Criar item de estoque SEM saldo (0 unidades disponíveis)
+## ► Copiar "id" para @c4ItemSemSaldoId
+## Ao adicionar à OS → status A_RECEBER (sem reserva, pois qtd=0)
+## Estoque: disponivel=0, reservado=0
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Correia Dentada C4",
+    "descricao": "Correia dentada para cenario 4 sem saldo",
+    "codigo": "CD-C4E-004",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 150.00
+}
+
+###
+
+### [C4-05] Criar OS
+## ► Copiar "id" para @c4OrdemServicoId
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c4ClienteId}}",
+    "veiculo_id": "{{c4VeiculoId}}",
+    "queixa_inicial": "Correia dentada com barulho e carro perdendo potencia."
+}
+
+###
+
+### [C4-06] Iniciar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C4-07] Registrar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Correia dentada com desgaste critico. Substituicao urgente necessaria."
+}
+
+###
+
+### [C4-08] Adicionar serviço
+## ► Copiar "id" do serviço da OS retornado para @c4OrdemServicoServicoId
+POST {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c4ServicoId}}",
+    "observacao": "Troca urgente da correia dentada."
+}
+
+###
+
+### [C4-09] Adicionar item SEM saldo (quantidade: 1)
+## ► Copiar "id" do item da OS retornado para @c4OrdemServicoItemAReceberId
+## Esperado: 201 — status A_RECEBER (sem saldo → não reserva)
+## Estoque: disponivel=0, reservado=0
+POST {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c4ItemSemSaldoId}}",
+    "quantidade": 1
+}
+
+###
+
+### [C4-10] Concluir diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C4-11] Gerar orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C4-12] Aprovar orçamento
+## Esperado: OS → AGUARDANDO_ITENS (item A_RECEBER ainda ativo)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C4-13] ★ Tentar iniciar execução com item A_RECEBER ★
+## Esperado: 422 — não é possível iniciar execução com item A_RECEBER ativo
+## OS permanece AGUARDANDO_ITENS
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C4-14] Detalhar OS (deve permanecer AGUARDANDO_ITENS)
+## Esperado:
+##   OS.status = AGUARDANDO_ITENS
+##   item da OS: status = A_RECEBER
+GET {{baseUrl}}/api/v1/ordens-servico/{{c4OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C4-15] Consultar estoque (deve permanecer inalterado)
+## Esperado: disponivel=0, reservado=0
+GET {{baseUrl}}/api/v1/itens-estoque/{{c4ItemSemSaldoId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+## ============================================================
+## CENÁRIO 5 — FINALIZAÇÃO BLOQUEADA POR SERVIÇO SEM TEMPO
+##
+## Objetivo:
+##   Validar que a OS não pode ser finalizada enquanto houver
+##   serviço ativo sem tempo_executado_minutos.
+##
+## Fluxo:
+##   OS com 2 serviços ativos.
+##   Registrar tempo apenas no serviço 1.
+##   Tentar finalizar → 422 (serviço 2 sem tempo bloqueia).
+##   Registrar tempo no serviço 2.
+##   Finalizar → sucesso.
+## ============================================================
+
+### [C5-01] Criar cliente
+## ► Copiar "id" para @c5ClienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Luciana Execucao C5",
+    "cpf_cnpj": "90630223087",
+    "telefone": "11988880005",
+    "email": "luciana.exec.c5@example.com",
+    "cep": "01310100",
+    "logradouro": "Rua Haddock Lobo",
+    "numero": "500",
+    "complemento": null,
+    "bairro": "Cerqueira Cesar",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [C5-02] Criar veículo
+## ► Copiar "id" para @c5VeiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c5ClienteId}}",
+    "placa": "EXE5C05",
+    "marca": "Renault",
+    "modelo": "Sandero",
+    "ano_fabricacao": 2020,
+    "ano_modelo": 2021,
+    "cor": "Vermelho"
+}
+
+###
+
+### [C5-03] Criar serviço 1
+## ► Copiar "id" para @c5Servico1Id
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Troca Filtro Ar C5",
+    "descricao": "Substituicao do filtro de ar do motor",
+    "valor_base": 80.00,
+    "tempo_medio_minutos": 30
+}
+
+###
+
+### [C5-04] Criar serviço 2
+## ► Copiar "id" para @c5Servico2Id
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Limpeza Bico Injetor C5",
+    "descricao": "Limpeza e teste dos bicos injetores",
+    "valor_base": 150.00,
+    "tempo_medio_minutos": 60
+}
+
+###
+
+### [C5-05] Criar item de estoque COM saldo
+## ► Copiar "id" para @c5ItemEstoqueId
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Filtro de Ar C5",
+    "descricao": "Filtro de ar para cenario 5 dois servicos",
+    "codigo": "FA-C5E-005",
+    "quantidade_disponivel": 5,
+    "quantidade_minima": 1,
+    "valor_unitario": 45.00
+}
+
+###
+
+### [C5-06] Criar OS
+## ► Copiar "id" para @c5OrdemServicoId
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{c5ClienteId}}",
+    "veiculo_id": "{{c5VeiculoId}}",
+    "queixa_inicial": "Carro engasgando na aceleracao e alto consumo."
+}
+
+###
+
+### [C5-07] Iniciar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-08] Registrar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Filtro de ar entupido e bicos injetores com depositos. Limpeza e substituicao necessarios."
+}
+
+###
+
+### [C5-09] Adicionar serviço 1 à OS
+## ► Copiar "id" retornado para @c5OrdemServicoServico1Id
+POST {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c5Servico1Id}}",
+    "observacao": "Troca do filtro de ar."
+}
+
+###
+
+### [C5-10] Adicionar serviço 2 à OS
+## ► Copiar "id" retornado para @c5OrdemServicoServico2Id
+POST {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{c5Servico2Id}}",
+    "observacao": "Limpeza dos bicos injetores."
+}
+
+###
+
+### [C5-11] Adicionar item COM saldo (quantidade: 1)
+## ► Copiar "id" retornado para @c5OrdemServicoItemId
+## Esperado: status RESERVADO
+POST {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{c5ItemEstoqueId}}",
+    "quantidade": 1
+}
+
+###
+
+### [C5-12] Concluir diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-13] Gerar orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [C5-14] Aprovar orçamento
+## Esperado: OS → APROVADA (item RESERVADO)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [C5-15] Iniciar execução
+## Esperado: OS → EM_EXECUCAO, item → EM_USO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-16] Registrar tempo apenas no serviço 1 (50 min)
+## Esperado: 200 — serviço 1: tempo_executado_minutos = 50
+## Serviço 2 permanece sem tempo (null)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/servicos/{{c5OrdemServicoServico1Id}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 50
+}
+
+###
+
+### [C5-17] ★ Tentar finalizar OS com serviço 2 sem tempo ★
+## Esperado: 422 — não é possível finalizar com serviço ativo sem tempo executado
+## OS permanece EM_EXECUCAO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-18] Detalhar OS (deve permanecer EM_EXECUCAO)
+## Esperado:
+##   OS.status = EM_EXECUCAO
+##   serviço 1: tempo_executado_minutos = 50
+##   serviço 2: tempo_executado_minutos = null
+##   item: status = EM_USO
+##   estoque: sem alteração
+GET {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-19] Registrar tempo no serviço 2 (40 min)
+## Esperado: 200 — serviço 2: tempo_executado_minutos = 40
+## Agora todos os serviços ativos têm tempo → finalização desbloqueada
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/servicos/{{c5OrdemServicoServico2Id}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 40
+}
+
+###
+
+### [C5-20] ★ Finalizar OS com todos os serviços com tempo ★
+## Esperado: 200 — OS.status = FINALIZADA
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-21] Detalhar OS após finalizar
+## Esperado:
+##   OS.status = FINALIZADA
+##   serviço 1: tempo_executado_minutos = 50
+##   serviço 2: tempo_executado_minutos = 40
+##   item: status = EM_USO (não CONSUMIDO nesta fase)
+GET {{baseUrl}}/api/v1/ordens-servico/{{c5OrdemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [C5-22] Consultar estoque após finalizar
+## Esperado: sem alteração (reservado não baixa nesta fase)
+GET {{baseUrl}}/api/v1/itens-estoque/{{c5ItemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAdmin}}
+
+
+## ============================================================
+## CENÁRIOS NEGATIVOS
+##
+## Orientação:
+##   @negOrdemServicoId → usar ID de OS APROVADA não utilizada,
+##     ou de OS EM_EXECUCAO (conforme o caso testado).
+##   Reaproveitar IDs dos cenários acima após os fluxos felizes
+##   ou criar nova OS para os testes negativos específicos.
+##
+## IMPORTANTE:
+##   NEG-01 a NEG-04 testam permissão: qualquer OS serve.
+##   NEG-05 e NEG-06 testam tempo inválido: OS EM_EXECUCAO.
+##   NEG-07 testa OS fora de EM_EXECUCAO: usar OS APROVADA.
+##   NEG-08 testa serviço inexistente: OS EM_EXECUCAO.
+##   NEG-09 testa duplo início: usar OS APROVADA.
+##   NEG-10 testa dupla finalização: usar OS já FINALIZADA.
+## ============================================================
+
+### [NEG-01] Sem token — não inicia execução
+## Esperado: 401 ou 403 conforme padrão real
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/iniciar-execucao HTTP/1.1
+
+###
+
+### [NEG-02] ★ Atendente não inicia execução ★
+## Esperado: 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [NEG-03] ★ Atendente não registra tempo executado ★
+## Usar OS em EM_EXECUCAO para @negOrdemServicoId e @negServicoOsId
+## Esperado: 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/servicos/{{negServicoOsId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tempo_executado_minutos": 30
+}
+
+###
+
+### [NEG-04] ★ Atendente não finaliza OS ★
+## Usar OS em EM_EXECUCAO com tempo registrado
+## Esperado: 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [NEG-05] ★ Não registrar tempo com valor zero ★
+## Usar OS em EM_EXECUCAO para @negOrdemServicoId e @negServicoOsId
+## Esperado: 422
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/servicos/{{negServicoOsId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 0
+}
+
+###
+
+### [NEG-06] ★ Não registrar tempo negativo ★
+## Esperado: 422
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/servicos/{{negServicoOsId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": -10
+}
+
+###
+
+### [NEG-07] ★ Não registrar tempo em OS fora de EM_EXECUCAO ★
+## Usar OS APROVADA ou DIAGNOSTICO_CONCLUIDO para @negOrdemServicoId
+## Esperado: 422
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/servicos/{{negServicoOsId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 30
+}
+
+###
+
+### [NEG-08] ★ Não registrar tempo em serviço inexistente ★
+## Usar OS EM_EXECUCAO para @negOrdemServicoId
+## UUID fictício para o serviço da OS
+## Esperado: 404
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/servicos/00000000-0000-0000-0000-000000000099/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 30
+}
+
+###
+
+### [NEG-09] ★ Não iniciar execução duas vezes ★
+## Orientação:
+##   1. Use uma OS APROVADA (pode ser a do Cenário 3 antes de iniciar, ou nova OS).
+##   2. Execute a primeira chamada abaixo (deve retornar 200).
+##   3. Execute a segunda chamada — deve retornar 422 (OS já em EM_EXECUCAO).
+##
+## Passo 1 — iniciar execução (sucesso)
+## Esperado: 200
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+## Passo 2 — tentar iniciar execução novamente (falha)
+## Esperado: 422 — OS já em EM_EXECUCAO, transição inválida
+## OS permanece EM_EXECUCAO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{negOrdemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [NEG-10] ★ Não finalizar OS duas vezes ★
+## Orientação:
+##   Use OS do Cenário 1 (já FINALIZADA) como @negOrdemServicoId, ou
+##   reutilize uma OS FINALIZADA de outro cenário.
+##
+## Tentar finalizar OS já FINALIZADA
+## Esperado: 422 — OS não está EM_EXECUCAO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{c1OrdemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}

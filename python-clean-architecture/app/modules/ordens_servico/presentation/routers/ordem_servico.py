@@ -26,6 +26,7 @@ from app.modules.ordens_servico.application.dtos.ordem_servico import (
     OrdemServicoServicoResponse,
     RecusarOrcamentoRequest,
     RegistrarDiagnosticoRequest,
+    RegistrarTempoExecutadoServicoRequest,
 )
 from app.modules.ordens_servico.domain.entities.ordem_servico import StatusOrdemServico
 from app.modules.ordens_servico.domain.exceptions import (
@@ -40,7 +41,11 @@ from app.modules.ordens_servico.domain.exceptions import (
     OrdemServicoNaoEncontradaError,
     OrdemServicoServicoNaoEncontradoError,
     OrdemServicoTransicaoInvalidaError,
+    OrdemServicoPossuiItemAReceberError,
+    OrdemServicoPossuiServicoSemTempoExecutadoError,
+    OrdemServicoServicoCanceladoError,
     ServicoJaAdicionadoNaOrdemServicoError,
+    TempoExecutadoInvalidoError,
 )
 from app.modules.ordens_servico.domain.filters.ordem_servico import ListarOrdensServicoFiltro
 from app.modules.ordens_servico.presentation.dependencies import (
@@ -52,14 +57,17 @@ from app.modules.ordens_servico.presentation.dependencies import (
     CriarOrdemServicoDep,
     GerarOrcamentoDep,
     IniciarDiagnosticoDep,
+    IniciarExecucaoDep,
     ListarComunicacoesDep,
     ListarOrdensServicoDep,
     ObterOrcamentoPorOSDep,
     ObterOrdemServicoPorIdDep,
     RecusarOrcamentoDep,
     RegistrarDiagnosticoDep,
+    RegistrarTempoExecutadoDep,
     RemoverItemDep,
     RemoverServicoDep,
+    FinalizarOrdemServicoDep,
 )
 
 router = APIRouter()
@@ -545,6 +553,106 @@ async def confirmar_recebimento_item(
     except OrdemServicoTransicaoInvalidaError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except ItemOrdemServicoStatusInvalidoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+# ---------------------------------------------------------------------------
+# Iniciar Execução da OS
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/iniciar-execucao",
+    summary="Iniciar Execução da OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS não encontrada", "model": ErrorResponse},
+        422: {"description": "Status inválido ou item A_RECEBER pendente", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_MECANICO],
+)
+async def iniciar_execucao(
+    ordem_servico_id: UUID,
+    usecase: IniciarExecucaoDep,
+) -> OrdemServicoDetalheResponse:
+    try:
+        return await usecase.execute(str(ordem_servico_id))
+    except OrdemServicoNaoEncontradaError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OrdemServicoPossuiItemAReceberError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except OrdemServicoTransicaoInvalidaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Registrar Tempo Executado em Serviço da OS
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/servicos/{ordem_servico_servico_id}/tempo-executado",
+    summary="Registrar Tempo Executado em Serviço da OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS ou serviço não encontrado", "model": ErrorResponse},
+        422: {"description": "Status inválido, serviço cancelado ou tempo inválido", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_MECANICO],
+)
+async def registrar_tempo_executado(
+    ordem_servico_id: UUID,
+    ordem_servico_servico_id: UUID,
+    dto: RegistrarTempoExecutadoServicoRequest,
+    usecase: RegistrarTempoExecutadoDep,
+) -> OrdemServicoServicoResponse:
+    try:
+        return await usecase.execute(
+            str(ordem_servico_id),
+            str(ordem_servico_servico_id),
+            dto.tempo_executado_minutos,
+        )
+    except (OrdemServicoNaoEncontradaError, OrdemServicoServicoNaoEncontradoError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OrdemServicoServicoCanceladoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except TempoExecutadoInvalidoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except OrdemServicoTransicaoInvalidaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Finalizar OS
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/finalizar",
+    summary="Finalizar OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS não encontrada", "model": ErrorResponse},
+        422: {"description": "Status inválido ou serviço ativo sem tempo executado", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_MECANICO],
+)
+async def finalizar_ordem_servico(
+    ordem_servico_id: UUID,
+    usecase: FinalizarOrdemServicoDep,
+) -> OrdemServicoDetalheResponse:
+    try:
+        return await usecase.execute(str(ordem_servico_id))
+    except OrdemServicoNaoEncontradaError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OrdemServicoPossuiServicoSemTempoExecutadoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except OrdemServicoTransicaoInvalidaError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except InvalidIDError as exc:
         raise HTTPException(status_code=422, detail=str(exc))

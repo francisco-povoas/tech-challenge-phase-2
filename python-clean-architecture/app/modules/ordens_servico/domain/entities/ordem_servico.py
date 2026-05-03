@@ -10,6 +10,8 @@ from app.shared.value_objects.id import ID
 from app.modules.ordens_servico.domain.exceptions import (
     OrdemServicoInvalidaError,
     OrdemServicoTransicaoInvalidaError,
+    OrdemServicoPossuiItemAReceberError,
+    OrdemServicoPossuiServicoSemTempoExecutadoError,
 )
 
 
@@ -94,3 +96,71 @@ class OrdemServico:
                 f"Não é possível alterar o status de '{self.status.value}' "
                 f"para '{novo_status.value}'."
             )
+
+    def iniciar_execucao(
+        self,
+        itens_ativos_status: list[str],
+    ) -> "OrdemServico":
+        """Inicia execução da OS (APROVADA -> EM_EXECUCAO).
+
+        Recebe lista de status dos itens ativos para validação.
+        Lança OrdemServicoTransicaoInvalidaError se OS não estiver APROVADA.
+        Lança OrdemServicoPossuiItemAReceberError se houver item ativo A_RECEBER.
+        """
+        from datetime import UTC, datetime
+
+        if self.status != StatusOrdemServico.APROVADA:
+            raise OrdemServicoTransicaoInvalidaError(
+                f"Só é possível iniciar execução de OS com status 'APROVADA'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        if "A_RECEBER" in itens_ativos_status:
+            raise OrdemServicoPossuiItemAReceberError(
+                "Não é possível iniciar execução enquanto houver item ativo com status 'A_RECEBER'."
+            )
+        return OrdemServico(
+            id=self.id,
+            cliente_id=self.cliente_id,
+            veiculo_id=self.veiculo_id,
+            status=StatusOrdemServico.EM_EXECUCAO,
+            queixa_inicial=self.queixa_inicial,
+            diagnostico=self.diagnostico,
+            criado_em=self.criado_em,
+            atualizado_em=datetime.now(UTC),
+            iniciado_diagnostico_em=self.iniciado_diagnostico_em,
+            diagnostico_concluido_em=self.diagnostico_concluido_em,
+        )
+
+    def finalizar(
+        self,
+        servicos_ativos_com_tempo: list[bool],
+    ) -> "OrdemServico":
+        """Finaliza a OS (EM_EXECUCAO -> FINALIZADA).
+
+        Recebe lista de booleans indicando se cada serviço ativo possui tempo_executado_minutos.
+        Lança OrdemServicoTransicaoInvalidaError se OS não estiver EM_EXECUCAO.
+        Lança OrdemServicoPossuiServicoSemTempoExecutadoError se algum serviço ativo não tiver tempo.
+        """
+        from datetime import UTC, datetime
+
+        if self.status != StatusOrdemServico.EM_EXECUCAO:
+            raise OrdemServicoTransicaoInvalidaError(
+                f"Só é possível finalizar OS com status 'EM_EXECUCAO'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        if not all(servicos_ativos_com_tempo):
+            raise OrdemServicoPossuiServicoSemTempoExecutadoError(
+                "Não é possível finalizar OS enquanto houver serviço ativo sem tempo executado."
+            )
+        return OrdemServico(
+            id=self.id,
+            cliente_id=self.cliente_id,
+            veiculo_id=self.veiculo_id,
+            status=StatusOrdemServico.FINALIZADA,
+            queixa_inicial=self.queixa_inicial,
+            diagnostico=self.diagnostico,
+            criado_em=self.criado_em,
+            atualizado_em=datetime.now(UTC),
+            iniciado_diagnostico_em=self.iniciado_diagnostico_em,
+            diagnostico_concluido_em=self.diagnostico_concluido_em,
+        )

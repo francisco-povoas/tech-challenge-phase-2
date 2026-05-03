@@ -67,3 +67,23 @@ class ClienteSemContatoParaOrcamentoError(DomainException):
     """Lançada quando o cliente não possui e-mail e/ou telefone para envio do orçamento."""
     pass
 
+
+class OrdemServicoPossuiItemAReceberError(DomainException):
+    """Lançada quando a OS possui item ativo com status A_RECEBER impedindo a execução."""
+    pass
+
+
+class OrdemServicoServicoCanceladoError(DomainException):
+    """Lançada quando se tenta operar em um serviço cancelado da OS."""
+    pass
+
+
+class TempoExecutadoInvalidoError(DomainException):
+    """Lançada quando o tempo executado informado é inválido."""
+    pass
+
+
+class OrdemServicoPossuiServicoSemTempoExecutadoError(DomainException):
+    """Lançada quando a OS possui serviço ativo sem tempo executado registrado."""
+    pass
+

@@ -38,6 +38,9 @@ from app.modules.ordens_servico.application.use_cases import (
     AprovarOrcamentoUseCase,
     RecusarOrcamentoUseCase,
     ConfirmarRecebimentoItemDaOrdemServicoUseCase,
+    IniciarExecucaoOrdemServicoUseCase,
+    RegistrarTempoExecutadoServicoUseCase,
+    FinalizarOrdemServicoUseCase,
 )
 
 
@@ -168,6 +171,18 @@ def get_confirmar_recebimento_item(uow: _UoWDep) -> ConfirmarRecebimentoItemDaOr
     return ConfirmarRecebimentoItemDaOrdemServicoUseCase(uow=uow)
 
 
+def get_iniciar_execucao(uow: _UoWDep) -> IniciarExecucaoOrdemServicoUseCase:
+    return IniciarExecucaoOrdemServicoUseCase(uow=uow)
+
+
+def get_registrar_tempo_executado(uow: _UoWDep) -> RegistrarTempoExecutadoServicoUseCase:
+    return RegistrarTempoExecutadoServicoUseCase(uow=uow)
+
+
+def get_finalizar_ordem_servico(uow: _UoWDep) -> FinalizarOrdemServicoUseCase:
+    return FinalizarOrdemServicoUseCase(uow=uow)
+
+
 # ---------------------------------------------------------------------------
 # Aliases Annotated para uso nos routers
 # ---------------------------------------------------------------------------
@@ -188,3 +203,6 @@ ListarComunicacoesDep = Annotated[ListarComunicacoesOrcamentoUseCase, Depends(ge
 AprovarOrcamentoDep = Annotated[AprovarOrcamentoUseCase, Depends(get_aprovar_orcamento)]
 RecusarOrcamentoDep = Annotated[RecusarOrcamentoUseCase, Depends(get_recusar_orcamento)]
 ConfirmarRecebimentoItemDep = Annotated[ConfirmarRecebimentoItemDaOrdemServicoUseCase, Depends(get_confirmar_recebimento_item)]
+IniciarExecucaoDep = Annotated[IniciarExecucaoOrdemServicoUseCase, Depends(get_iniciar_execucao)]
+RegistrarTempoExecutadoDep = Annotated[RegistrarTempoExecutadoServicoUseCase, Depends(get_registrar_tempo_executado)]
+FinalizarOrdemServicoDep = Annotated[FinalizarOrdemServicoUseCase, Depends(get_finalizar_ordem_servico)]

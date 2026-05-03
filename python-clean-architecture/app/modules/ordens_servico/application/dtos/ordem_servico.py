@@ -47,6 +47,12 @@ class RecusarOrcamentoRequest:
     motivo_recusa: Optional[str] = None
 
 
+@dataclass(frozen=True, kw_only=True)
+class RegistrarTempoExecutadoServicoRequest:
+    """Body para registrar tempo executado em serviço da OS."""
+    tempo_executado_minutos: int
+
+
 # ---------------------------------------------------------------------------
 # Response DTOs
 # ---------------------------------------------------------------------------

@@ -34,3 +34,36 @@ class OrdemServicoServico:
             raise OrdemServicoInvalidaError("O valor unitário do serviço não pode ser negativo.")
         if self.tempo_estimado_minutos <= 0:
             raise OrdemServicoInvalidaError("O tempo estimado do serviço deve ser maior que zero.")
+
+    def registrar_tempo_executado(self, tempo_executado_minutos: int) -> "OrdemServicoServico":
+        """Registra (ou sobrescreve) o tempo executado do serviço.
+
+        Retorna nova instância com tempo_executado_minutos atualizado.
+        Lança OrdemServicoServicoCanceladoError se o serviço estiver cancelado.
+        Lança TempoExecutadoInvalidoError se o tempo for <= 0.
+        """
+        from app.modules.ordens_servico.domain.exceptions import (
+            OrdemServicoServicoCanceladoError,
+            TempoExecutadoInvalidoError,
+        )
+
+        if self.cancelado:
+            raise OrdemServicoServicoCanceladoError(
+                "Não é possível registrar tempo executado em serviço cancelado."
+            )
+        if tempo_executado_minutos <= 0:
+            raise TempoExecutadoInvalidoError(
+                "Tempo executado deve ser maior que zero."
+            )
+        return OrdemServicoServico(
+            id=self.id,
+            ordem_servico_id=self.ordem_servico_id,
+            servico_id=self.servico_id,
+            nome_servico=self.nome_servico,
+            descricao_servico=self.descricao_servico,
+            valor_unitario=self.valor_unitario,
+            tempo_estimado_minutos=self.tempo_estimado_minutos,
+            tempo_executado_minutos=tempo_executado_minutos,
+            observacao=self.observacao,
+            cancelado=self.cancelado,
+        )

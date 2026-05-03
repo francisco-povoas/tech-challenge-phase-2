@@ -46,6 +46,15 @@ from app.modules.ordens_servico.application.use_cases.recusar_orcamento import (
 from app.modules.ordens_servico.application.use_cases.confirmar_recebimento_item import (
     ConfirmarRecebimentoItemDaOrdemServicoUseCase,
 )
+from app.modules.ordens_servico.application.use_cases.iniciar_execucao_ordem_servico import (
+    IniciarExecucaoOrdemServicoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.registrar_tempo_executado_servico import (
+    RegistrarTempoExecutadoServicoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.finalizar_ordem_servico import (
+    FinalizarOrdemServicoUseCase,
+)
 
 __all__ = [
     "CriarOrdemServicoUseCase",
@@ -64,4 +73,7 @@ __all__ = [
     "AprovarOrcamentoUseCase",
     "RecusarOrcamentoUseCase",
     "ConfirmarRecebimentoItemDaOrdemServicoUseCase",
+    "IniciarExecucaoOrdemServicoUseCase",
+    "RegistrarTempoExecutadoServicoUseCase",
+    "FinalizarOrdemServicoUseCase",
 ]

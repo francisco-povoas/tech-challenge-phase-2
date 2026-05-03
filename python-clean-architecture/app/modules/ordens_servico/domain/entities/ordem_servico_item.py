@@ -70,3 +70,27 @@ class OrdemServicoItem:
             valor_unitario=self.valor_unitario,
             status=StatusItemNaOS.RESERVADO,
         )
+
+    def colocar_em_uso(self) -> "OrdemServicoItem":
+        """Coloca item em uso (RESERVADO -> EM_USO).
+
+        Retorna nova instância com status EM_USO.
+        Lança ItemOrdemServicoStatusInvalidoError se o item não estiver RESERVADO.
+        """
+        from app.modules.ordens_servico.domain.exceptions import ItemOrdemServicoStatusInvalidoError
+
+        if self.status != StatusItemNaOS.RESERVADO:
+            raise ItemOrdemServicoStatusInvalidoError(
+                f"Só é possível colocar em uso item com status 'RESERVADO'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        return OrdemServicoItem(
+            id=self.id,
+            ordem_servico_id=self.ordem_servico_id,
+            item_estoque_id=self.item_estoque_id,
+            nome_item=self.nome_item,
+            tipo_item=self.tipo_item,
+            quantidade=self.quantidade,
+            valor_unitario=self.valor_unitario,
+            status=StatusItemNaOS.EM_USO,
+        )

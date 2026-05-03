@@ -68,12 +68,12 @@ class ItemEstoqueRepo:
     async def obter_por_id_com_lock(self, _id: ID) -> Optional[ItemEstoque]:
         """Retorna o item com lock pessimista para evitar condição de corrida em reservas."""
 
-        result = await self.session.execute(
+        result = await self.session.exec(
             select(ItemEstoqueModel)
             .where(ItemEstoqueModel.id == _id.value)
             .with_for_update()
         )
-        model = result.scalar_one_or_none()
+        model = result.first()
         if not model:
             return None
         return self._to_entity(model)

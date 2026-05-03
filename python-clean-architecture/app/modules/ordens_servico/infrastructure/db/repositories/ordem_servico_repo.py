@@ -12,10 +12,14 @@ from app.shared.value_objects.id import ID
 from app.modules.ordens_servico.domain.entities.ordem_servico import OrdemServico, StatusOrdemServico
 from app.modules.ordens_servico.domain.entities.ordem_servico_item import OrdemServicoItem, StatusItemNaOS
 from app.modules.ordens_servico.domain.entities.ordem_servico_servico import OrdemServicoServico
+from app.modules.ordens_servico.domain.entities.orcamento import Orcamento, StatusOrcamento
+from app.modules.ordens_servico.domain.entities.orcamento_comunicacao import OrcamentoComunicacao, CanalComunicacaoOrcamento
 from app.modules.ordens_servico.domain.filters.ordem_servico import ListarOrdensServicoFiltro
 from app.modules.ordens_servico.infrastructure.db.models.ordem_servico_item_model import OrdemServicoItemModel
 from app.modules.ordens_servico.infrastructure.db.models.ordem_servico_model import OrdemServicoModel
 from app.modules.ordens_servico.infrastructure.db.models.ordem_servico_servico_model import OrdemServicoServicoModel
+from app.modules.ordens_servico.infrastructure.db.models.ordem_servico_orcamento_model import OrdemServicoOrcamentoModel
+from app.modules.ordens_servico.infrastructure.db.models.ordem_servico_orcamento_comunicacao_model import OrdemServicoOrcamentoComunicacaoModel
 
 
 class OrdemServicoRepo:
@@ -236,4 +240,129 @@ class OrdemServicoRepo:
             quantidade=model.quantidade,
             valor_unitario=Decimal(str(model.valor_unitario)),
             status=StatusItemNaOS(model.status),
+        )
+
+    # -----------------------------------------------------------------------
+    # Orcamento
+    # -----------------------------------------------------------------------
+
+    async def salvar_orcamento(self, orcamento: Orcamento) -> None:
+        model = OrdemServicoOrcamentoModel(
+            id=orcamento.id.value,
+            ordem_servico_id=orcamento.ordem_servico_id,
+            status=orcamento.status.value,
+            total_servicos=orcamento.total_servicos,
+            total_itens=orcamento.total_itens,
+            total_geral=orcamento.total_geral,
+            criado_em=orcamento.criado_em,
+            atualizado_em=orcamento.atualizado_em,
+            comunicado_em=orcamento.comunicado_em,
+            observacao=orcamento.observacao,
+        )
+        self.session.add(model)
+        # Flush imediato para garantir que a linha exista no banco antes de
+        # qualquer inserção nas tabelas filhas (comunicações) que referenciam
+        # esta linha via FK.
+        await self.session.flush()
+
+    async def obter_orcamento_por_ordem_servico_id(self, ordem_servico_id: ID) -> Optional[Orcamento]:
+        result = await self.session.exec(
+            select(OrdemServicoOrcamentoModel).where(
+                OrdemServicoOrcamentoModel.ordem_servico_id == ordem_servico_id.value
+            )
+        )
+        model = result.first()
+        return self._orc_to_entity(model) if model else None
+
+    async def atualizar_orcamento(self, orcamento: Orcamento) -> Optional[Orcamento]:
+        model = await self.session.get(OrdemServicoOrcamentoModel, orcamento.id.value)
+        if not model:
+            return None
+        model.status = orcamento.status.value
+        model.atualizado_em = orcamento.atualizado_em
+        model.comunicado_em = orcamento.comunicado_em
+        self.session.add(model)
+        return orcamento
+
+    async def orcamento_existe_para_os(self, ordem_servico_id: ID) -> bool:
+        result = await self.session.exec(
+            select(OrdemServicoOrcamentoModel).where(
+                OrdemServicoOrcamentoModel.ordem_servico_id == ordem_servico_id.value
+            )
+        )
+        return result.first() is not None
+
+    # -----------------------------------------------------------------------
+    # OrcamentoComunicacao
+    # -----------------------------------------------------------------------
+
+    async def salvar_comunicacao(self, comunicacao: OrcamentoComunicacao) -> None:
+        model = OrdemServicoOrcamentoComunicacaoModel(
+            id=comunicacao.id.value,
+            orcamento_id=comunicacao.orcamento_id,
+            ordem_servico_id=comunicacao.ordem_servico_id,
+            canal=comunicacao.canal.value,
+            destino=comunicacao.destino,
+            sucesso=comunicacao.sucesso,
+            mensagem=comunicacao.mensagem,
+            provedor=comunicacao.provedor,
+            referencia_externa=comunicacao.referencia_externa,
+            enviado_em=comunicacao.enviado_em,
+            criado_em=comunicacao.criado_em,
+        )
+        self.session.add(model)
+
+    async def listar_comunicacoes_por_ordem_servico_id(
+        self, ordem_servico_id: ID
+    ) -> list[OrcamentoComunicacao]:
+        result = await self.session.exec(
+            select(OrdemServicoOrcamentoComunicacaoModel).where(
+                OrdemServicoOrcamentoComunicacaoModel.ordem_servico_id == ordem_servico_id.value
+            )
+        )
+        return [self._com_to_entity(m) for m in result.all()]
+
+    async def listar_comunicacoes_por_orcamento_id(
+        self, orcamento_id: ID
+    ) -> list[OrcamentoComunicacao]:
+        result = await self.session.exec(
+            select(OrdemServicoOrcamentoComunicacaoModel).where(
+                OrdemServicoOrcamentoComunicacaoModel.orcamento_id == orcamento_id.value
+            )
+        )
+        return [self._com_to_entity(m) for m in result.all()]
+
+    # -----------------------------------------------------------------------
+    # Conversão model → entidade (orcamento)
+    # -----------------------------------------------------------------------
+
+    @staticmethod
+    def _orc_to_entity(model: OrdemServicoOrcamentoModel) -> Orcamento:
+        return Orcamento(
+            id=ID.from_string(str(model.id)),
+            ordem_servico_id=model.ordem_servico_id,
+            status=StatusOrcamento(model.status),
+            total_servicos=Decimal(str(model.total_servicos)),
+            total_itens=Decimal(str(model.total_itens)),
+            total_geral=Decimal(str(model.total_geral)),
+            criado_em=model.criado_em,
+            atualizado_em=model.atualizado_em,
+            comunicado_em=model.comunicado_em,
+            observacao=model.observacao,
+        )
+
+    @staticmethod
+    def _com_to_entity(model: OrdemServicoOrcamentoComunicacaoModel) -> OrcamentoComunicacao:
+        return OrcamentoComunicacao(
+            id=ID.from_string(str(model.id)),
+            orcamento_id=model.orcamento_id,
+            ordem_servico_id=model.ordem_servico_id,
+            canal=CanalComunicacaoOrcamento(model.canal),
+            destino=model.destino,
+            sucesso=model.sucesso,
+            mensagem=model.mensagem,
+            provedor=model.provedor,
+            referencia_externa=model.referencia_externa,
+            enviado_em=model.enviado_em,
+            criado_em=model.criado_em,
         )

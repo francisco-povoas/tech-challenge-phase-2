@@ -35,6 +35,12 @@ class AdicionarItemNaOSRequest:
     quantidade: int
 
 
+@dataclass(frozen=True, kw_only=True)
+class GerarOrcamentoRequest:
+    """Body opcional para geração do orçamento."""
+    observacao: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Response DTOs
 # ---------------------------------------------------------------------------
@@ -96,3 +102,37 @@ class OrdemServicoDetalheResponse:
     diagnostico_concluido_em: Optional[datetime]
     servicos: list[OrdemServicoServicoResponse] = field(default_factory=list)
     itens: list[OrdemServicoItemResponse] = field(default_factory=list)
+
+
+@dataclass(frozen=True, kw_only=True)
+class OrcamentoComunicacaoResponse:
+    """Resposta de uma comunicação de orçamento."""
+
+    id: str
+    orcamento_id: str
+    ordem_servico_id: str
+    canal: str
+    destino: str
+    sucesso: bool
+    mensagem: str
+    provedor: str
+    referencia_externa: Optional[str]
+    enviado_em: datetime
+    criado_em: datetime
+
+
+@dataclass(frozen=True, kw_only=True)
+class OrcamentoResponse:
+    """Resposta completa do orçamento de uma OS."""
+
+    id: str
+    ordem_servico_id: str
+    status: str
+    total_servicos: Decimal
+    total_itens: Decimal
+    total_geral: Decimal
+    criado_em: datetime
+    atualizado_em: datetime
+    comunicado_em: Optional[datetime]
+    observacao: Optional[str]
+    comunicacoes: list[OrcamentoComunicacaoResponse] = field(default_factory=list)

@@ -28,6 +28,15 @@ from app.modules.ordens_servico.application.use_cases.remover_item_da_ordem_serv
 from app.modules.ordens_servico.application.use_cases.concluir_diagnostico import (
     ConcluirDiagnosticoOrdemServicoUseCase,
 )
+from app.modules.ordens_servico.application.use_cases.gerar_orcamento import (
+    GerarOrcamentoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.obter_orcamento_por_ordem_servico import (
+    ObterOrcamentoPorOrdemServicoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.listar_comunicacoes_orcamento import (
+    ListarComunicacoesOrcamentoUseCase,
+)
 
 __all__ = [
     "CriarOrdemServicoUseCase",

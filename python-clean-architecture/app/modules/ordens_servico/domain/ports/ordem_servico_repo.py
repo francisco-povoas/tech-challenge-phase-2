@@ -6,6 +6,8 @@ from app.shared.value_objects.id import ID
 from app.modules.ordens_servico.domain.entities.ordem_servico import OrdemServico
 from app.modules.ordens_servico.domain.entities.ordem_servico_servico import OrdemServicoServico
 from app.modules.ordens_servico.domain.entities.ordem_servico_item import OrdemServicoItem
+from app.modules.ordens_servico.domain.entities.orcamento import Orcamento
+from app.modules.ordens_servico.domain.entities.orcamento_comunicacao import OrcamentoComunicacao
 from app.modules.ordens_servico.domain.filters.ordem_servico import ListarOrdensServicoFiltro
 
 
@@ -61,3 +63,27 @@ class OrdemServicoRepo(Protocol):
     ) -> Optional[OrdemServicoItem]:
         """Retorna o vínculo ativo (status != CANCELADO) para o par OS+item, ou None."""
         ...
+
+    # --- Orcamento ---
+
+    async def salvar_orcamento(self, orcamento: Orcamento) -> None: ...
+
+    async def obter_orcamento_por_ordem_servico_id(
+        self, ordem_servico_id: ID
+    ) -> Optional[Orcamento]: ...
+
+    async def atualizar_orcamento(self, orcamento: Orcamento) -> Optional[Orcamento]: ...
+
+    async def orcamento_existe_para_os(self, ordem_servico_id: ID) -> bool: ...
+
+    # --- OrcamentoComunicacao ---
+
+    async def salvar_comunicacao(self, comunicacao: OrcamentoComunicacao) -> None: ...
+
+    async def listar_comunicacoes_por_ordem_servico_id(
+        self, ordem_servico_id: ID
+    ) -> list[OrcamentoComunicacao]: ...
+
+    async def listar_comunicacoes_por_orcamento_id(
+        self, orcamento_id: ID
+    ) -> list[OrcamentoComunicacao]: ...

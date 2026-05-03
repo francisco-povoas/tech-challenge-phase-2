@@ -37,3 +37,23 @@ class ItemJaAdicionadoNaOrdemServicoError(DomainException):
     """Lançada quando o item de estoque já está ativo na OS."""
     pass
 
+
+class OrcamentoInvalidoError(DomainException):
+    """Lançada quando os dados do orçamento são inválidos."""
+    pass
+
+
+class OrcamentoNaoEncontradoError(DomainException):
+    """Lançada quando o orçamento solicitado não é encontrado."""
+    pass
+
+
+class OrcamentoJaExisteParaOrdemServicoError(DomainException):
+    """Lançada quando já existe um orçamento para a OS."""
+    pass
+
+
+class ClienteSemContatoParaOrcamentoError(DomainException):
+    """Lançada quando o cliente não possui e-mail e/ou telefone para envio do orçamento."""
+    pass
+

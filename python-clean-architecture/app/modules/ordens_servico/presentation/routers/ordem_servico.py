@@ -24,6 +24,7 @@ from app.modules.ordens_servico.application.dtos.ordem_servico import (
     OrdemServicoItemResponse,
     OrdemServicoResumoResponse,
     OrdemServicoServicoResponse,
+    RecusarOrcamentoRequest,
     RegistrarDiagnosticoRequest,
 )
 from app.modules.ordens_servico.domain.entities.ordem_servico import StatusOrdemServico
@@ -32,6 +33,7 @@ from app.modules.ordens_servico.domain.exceptions import (
     ItemJaAdicionadoNaOrdemServicoError,
     OrcamentoJaExisteParaOrdemServicoError,
     OrcamentoNaoEncontradoError,
+    OrcamentoStatusInvalidoError,
     OrdemServicoInvalidaError,
     OrdemServicoItemNaoEncontradoError,
     OrdemServicoNaoEncontradaError,
@@ -43,6 +45,7 @@ from app.modules.ordens_servico.domain.filters.ordem_servico import ListarOrdens
 from app.modules.ordens_servico.presentation.dependencies import (
     AdicionarItemDep,
     AdicionarServicoDep,
+    AprovarOrcamentoDep,
     ConcluirDiagnosticoDep,
     CriarOrdemServicoDep,
     GerarOrcamentoDep,
@@ -51,6 +54,7 @@ from app.modules.ordens_servico.presentation.dependencies import (
     ListarOrdensServicoDep,
     ObterOrcamentoPorOSDep,
     ObterOrdemServicoPorIdDep,
+    RecusarOrcamentoDep,
     RegistrarDiagnosticoDep,
     RemoverItemDep,
     RemoverServicoDep,
@@ -449,3 +453,57 @@ async def listar_comunicacoes_orcamento(
     except (OrdemServicoNaoEncontradaError, OrcamentoNaoEncontradoError) as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
+
+# ---------------------------------------------------------------------------
+# Aprovar Orçamento
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/orcamento/aprovar",
+    summary="Aprovar Orçamento da OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS ou orçamento não encontrado", "model": ErrorResponse},
+        422: {"description": "Status inválido para a operação", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def aprovar_orcamento(
+    ordem_servico_id: UUID,
+    usecase: AprovarOrcamentoDep,
+) -> OrcamentoResponse:
+    try:
+        return await usecase.execute(str(ordem_servico_id))
+    except (OrdemServicoNaoEncontradaError, OrcamentoNaoEncontradoError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (OrdemServicoTransicaoInvalidaError, OrcamentoStatusInvalidoError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Recusar Orçamento
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/orcamento/recusar",
+    summary="Recusar Orçamento da OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS ou orçamento não encontrado", "model": ErrorResponse},
+        422: {"description": "Status inválido para a operação", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def recusar_orcamento(
+    ordem_servico_id: UUID,
+    usecase: RecusarOrcamentoDep,
+    dto: RecusarOrcamentoRequest = RecusarOrcamentoRequest(),
+) -> OrcamentoResponse:
+    try:
+        return await usecase.execute(str(ordem_servico_id), dto.motivo_recusa)
+    except (OrdemServicoNaoEncontradaError, OrcamentoNaoEncontradoError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (OrdemServicoTransicaoInvalidaError, OrcamentoStatusInvalidoError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))

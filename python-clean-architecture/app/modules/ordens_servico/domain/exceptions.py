@@ -53,6 +53,11 @@ class OrcamentoJaExisteParaOrdemServicoError(DomainException):
     pass
 
 
+class OrcamentoStatusInvalidoError(DomainException):
+    """Lançada quando o orçamento não está no status esperado para a operação."""
+    pass
+
+
 class ClienteSemContatoParaOrcamentoError(DomainException):
     """Lançada quando o cliente não possui e-mail e/ou telefone para envio do orçamento."""
     pass

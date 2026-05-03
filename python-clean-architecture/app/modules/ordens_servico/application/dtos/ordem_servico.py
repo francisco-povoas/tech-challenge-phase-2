@@ -41,6 +41,12 @@ class GerarOrcamentoRequest:
     observacao: Optional[str] = None
 
 
+@dataclass(frozen=True, kw_only=True)
+class RecusarOrcamentoRequest:
+    """Body opcional para recusa do orçamento."""
+    motivo_recusa: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Response DTOs
 # ---------------------------------------------------------------------------
@@ -135,4 +141,6 @@ class OrcamentoResponse:
     atualizado_em: datetime
     comunicado_em: Optional[datetime]
     observacao: Optional[str]
+    respondido_em: Optional[datetime] = None
+    motivo_recusa: Optional[str] = None
     comunicacoes: list[OrcamentoComunicacaoResponse] = field(default_factory=list)

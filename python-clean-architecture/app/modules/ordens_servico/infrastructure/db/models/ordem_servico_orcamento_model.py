@@ -45,3 +45,9 @@ class OrdemServicoOrcamentoModel(SQLModel, table=True):
     observacao: Optional[str] = Field(
         default=None, sa_column=sa.Column(sa.Text, nullable=True)
     )
+    respondido_em: Optional[datetime] = Field(
+        default=None, sa_column=sa.Column(sa.DateTime(timezone=True), nullable=True)
+    )
+    motivo_recusa: Optional[str] = Field(
+        default=None, sa_column=sa.Column(sa.Text, nullable=True)
+    )

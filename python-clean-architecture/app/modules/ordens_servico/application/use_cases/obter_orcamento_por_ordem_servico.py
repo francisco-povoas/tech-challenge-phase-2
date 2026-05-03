@@ -58,6 +58,8 @@ def _to_orcamento_response(
         atualizado_em=orcamento.atualizado_em,
         comunicado_em=orcamento.comunicado_em,
         observacao=orcamento.observacao,
+        respondido_em=orcamento.respondido_em,
+        motivo_recusa=orcamento.motivo_recusa,
         comunicacoes=[_to_comunicacao_response(c) for c in comunicacoes],
     )
 

@@ -34,6 +34,8 @@ class Orcamento:
     atualizado_em: datetime
     comunicado_em: Optional[datetime]
     observacao: Optional[str]
+    respondido_em: Optional[datetime] = None
+    motivo_recusa: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.total_servicos < Decimal("0"):
@@ -60,4 +62,60 @@ class Orcamento:
             atualizado_em=comunicado_em,
             comunicado_em=comunicado_em,
             observacao=self.observacao,
+            respondido_em=self.respondido_em,
+            motivo_recusa=self.motivo_recusa,
+        )
+
+    def aprovar(self, respondido_em: datetime) -> "Orcamento":
+        """Retorna novo Orcamento com status APROVADO.
+
+        Somente orçamento COMUNICADO pode ser aprovado.
+        """
+        from app.modules.ordens_servico.domain.exceptions import OrcamentoStatusInvalidoError
+
+        if self.status != StatusOrcamento.COMUNICADO:
+            raise OrcamentoStatusInvalidoError(
+                f"Só é possível aprovar orçamento com status 'COMUNICADO'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        return Orcamento(
+            id=self.id,
+            ordem_servico_id=self.ordem_servico_id,
+            status=StatusOrcamento.APROVADO,
+            total_servicos=self.total_servicos,
+            total_itens=self.total_itens,
+            total_geral=self.total_geral,
+            criado_em=self.criado_em,
+            atualizado_em=respondido_em,
+            comunicado_em=self.comunicado_em,
+            observacao=self.observacao,
+            respondido_em=respondido_em,
+            motivo_recusa=None,
+        )
+
+    def recusar(self, respondido_em: datetime, motivo_recusa: Optional[str] = None) -> "Orcamento":
+        """Retorna novo Orcamento com status RECUSADO.
+
+        Somente orçamento COMUNICADO pode ser recusado.
+        """
+        from app.modules.ordens_servico.domain.exceptions import OrcamentoStatusInvalidoError
+
+        if self.status != StatusOrcamento.COMUNICADO:
+            raise OrcamentoStatusInvalidoError(
+                f"Só é possível recusar orçamento com status 'COMUNICADO'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        return Orcamento(
+            id=self.id,
+            ordem_servico_id=self.ordem_servico_id,
+            status=StatusOrcamento.RECUSADO,
+            total_servicos=self.total_servicos,
+            total_itens=self.total_itens,
+            total_geral=self.total_geral,
+            criado_em=self.criado_em,
+            atualizado_em=respondido_em,
+            comunicado_em=self.comunicado_em,
+            observacao=self.observacao,
+            respondido_em=respondido_em,
+            motivo_recusa=motivo_recusa,
         )

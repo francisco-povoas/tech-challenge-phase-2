@@ -258,6 +258,8 @@ class OrdemServicoRepo:
             atualizado_em=orcamento.atualizado_em,
             comunicado_em=orcamento.comunicado_em,
             observacao=orcamento.observacao,
+            respondido_em=orcamento.respondido_em,
+            motivo_recusa=orcamento.motivo_recusa,
         )
         self.session.add(model)
         # Flush imediato para garantir que a linha exista no banco antes de
@@ -281,6 +283,8 @@ class OrdemServicoRepo:
         model.status = orcamento.status.value
         model.atualizado_em = orcamento.atualizado_em
         model.comunicado_em = orcamento.comunicado_em
+        model.respondido_em = orcamento.respondido_em
+        model.motivo_recusa = orcamento.motivo_recusa
         self.session.add(model)
         return orcamento
 
@@ -349,6 +353,8 @@ class OrdemServicoRepo:
             atualizado_em=model.atualizado_em,
             comunicado_em=model.comunicado_em,
             observacao=model.observacao,
+            respondido_em=model.respondido_em,
+            motivo_recusa=model.motivo_recusa,
         )
 
     @staticmethod

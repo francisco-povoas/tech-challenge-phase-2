@@ -37,6 +37,12 @@ from app.modules.ordens_servico.application.use_cases.obter_orcamento_por_ordem_
 from app.modules.ordens_servico.application.use_cases.listar_comunicacoes_orcamento import (
     ListarComunicacoesOrcamentoUseCase,
 )
+from app.modules.ordens_servico.application.use_cases.aprovar_orcamento import (
+    AprovarOrcamentoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.recusar_orcamento import (
+    RecusarOrcamentoUseCase,
+)
 
 __all__ = [
     "CriarOrdemServicoUseCase",
@@ -49,4 +55,9 @@ __all__ = [
     "AdicionarItemNaOrdemServicoUseCase",
     "RemoverItemDaOrdemServicoUseCase",
     "ConcluirDiagnosticoOrdemServicoUseCase",
+    "GerarOrcamentoUseCase",
+    "ObterOrcamentoPorOrdemServicoUseCase",
+    "ListarComunicacoesOrcamentoUseCase",
+    "AprovarOrcamentoUseCase",
+    "RecusarOrcamentoUseCase",
 ]

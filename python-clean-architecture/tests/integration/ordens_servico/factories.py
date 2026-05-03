@@ -374,3 +374,140 @@ async def criar_os_pronta_para_concluir_diagnostico(
     Retorna: {cliente, veiculo, ordem_servico, servico, ordem_servico_servico, mecanico_headers}
     """
     return await criar_os_com_servico(client, admin_headers, mecanico_headers)
+
+
+async def criar_os_diagnostico_concluido_para_orcamento(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Cria uma OS completa com diagnóstico concluído, pronta para geração de orçamento.
+
+    Fluxo:
+      1. Cria atendente e mecânico dedidados.
+      2. Cria cliente (com telefone e e-mail) e veículo.
+      3. Cria serviço com valor_base=180.00.
+      4. Cria dois itens de estoque:
+         - item_com_saldo:  quantidade_disponivel=10, valor_unitario=85.00
+         - item_sem_saldo:  quantidade_disponivel=0,  valor_unitario=220.00
+      5. Cria OS → inicia diagnóstico → registra diagnóstico → adiciona serviço
+         → adiciona item_com_saldo (qtd=2, status RESERVADO)
+         → adiciona item_sem_saldo (qtd=1, status A_RECEBER)
+         → conclui diagnóstico.
+
+    Totais esperados:
+      total_servicos = 180.00
+      total_itens    = 85.00 × 2 + 220.00 × 1 = 390.00
+      total_geral    = 570.00
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo,
+        servico,
+        item_com_saldo, item_sem_saldo,
+        ordem_servico,
+        ordem_servico_servico,
+        ordem_servico_item_reservado,
+        ordem_servico_item_a_receber,
+      }
+    """
+    from tests.integration.ordens_servico.factories import (
+        criar_atendente,
+        criar_mecanico,
+        criar_cliente,
+        criar_veiculo,
+        criar_servico,
+        criar_item_estoque,
+        criar_ordem_servico,
+    )
+
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(client, admin_headers)
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+
+    servico = await criar_servico(
+        client, admin_headers, valor_base="180.00", tempo_medio_minutos=60
+    )
+    item_com_saldo = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=10, valor_unitario="85.00"
+    )
+    item_sem_saldo = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0, valor_unitario="220.00"
+    )
+
+    os_id_response = await criar_ordem_servico(
+        client, atendente["headers"], cliente["id"], veiculo["id"]
+    )
+    os_id = os_id_response["id"]
+
+    # Iniciar diagnóstico
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/iniciar-diagnostico",
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200, f"iniciar-diagnostico: {r.status_code} — {r.text}"
+
+    # Registrar texto do diagnóstico
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste nas pastilhas de freio"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200, f"registrar-diagnostico: {r.status_code} — {r.text}"
+
+    # Adicionar serviço
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"], "observacao": None},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201, f"adicionar-servico: {r.status_code} — {r.text}"
+    os_servico = r.json()
+
+    # Adicionar item com saldo (quantidade=2 → RESERVADO)
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_com_saldo["id"], "quantidade": 2},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201, f"adicionar-item-com-saldo: {r.status_code} — {r.text}"
+    os_item_reservado = r.json()
+
+    # Adicionar item sem saldo (quantidade=1 → A_RECEBER)
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_sem_saldo["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201, f"adicionar-item-sem-saldo: {r.status_code} — {r.text}"
+    os_item_a_receber = r.json()
+
+    # Concluir diagnóstico
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/concluir-diagnostico",
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200, f"concluir-diagnostico: {r.status_code} — {r.text}"
+    ordem_servico = r.json()
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_com_saldo": item_com_saldo,
+        "item_sem_saldo": item_sem_saldo,
+        "ordem_servico": ordem_servico,
+        "ordem_servico_servico": os_servico,
+        "ordem_servico_item_reservado": os_item_reservado,
+        "ordem_servico_item_a_receber": os_item_a_receber,
+    }

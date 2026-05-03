@@ -55,17 +55,19 @@ class GerarOrcamentoUseCase:
                     f"OS com ID {ordem_servico_id} não encontrada."
                 )
 
-            # 2. Validar status da OS
+            # 2. Verificar se orçamento já existe (antes de validar status,
+            #    pois após a primeira geração a OS muda para AGUARDANDO_APROVACAO
+            #    e a duplicidade deve ter prioridade sobre o erro de status)
+            if await self.uow.ordem_servico_repo.orcamento_existe_para_os(_id):
+                raise OrcamentoJaExisteParaOrdemServicoError(
+                    "Já existe orçamento gerado para esta ordem de serviço."
+                )
+
+            # 3. Validar status da OS
             if os.status != StatusOrdemServico.DIAGNOSTICO_CONCLUIDO:
                 raise OrdemServicoTransicaoInvalidaError(
                     f"Só é possível gerar orçamento para OS com status "
                     f"'DIAGNOSTICO_CONCLUIDO'. Status atual: '{os.status.value}'."
-                )
-
-            # 3. Verificar se orçamento já existe
-            if await self.uow.ordem_servico_repo.orcamento_existe_para_os(_id):
-                raise OrcamentoJaExisteParaOrdemServicoError(
-                    "Já existe orçamento gerado para esta ordem de serviço."
                 )
 
             # 4. Buscar cliente e dados de contato

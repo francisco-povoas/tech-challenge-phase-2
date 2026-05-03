@@ -708,6 +708,428 @@ async def criar_os_com_orcamento_comunicado_com_item_a_receber(
     }
 
 
+async def aprovar_orcamento(
+    client: AsyncClient,
+    headers: dict,
+    os_id: str,
+) -> dict:
+    """Aprova o orçamento da OS e retorna o JSON do orçamento."""
+    r = await client.patch(f"{_BASE_OS}/{os_id}/orcamento/aprovar", headers=headers)
+    assert r.status_code == 200, f"aprovar_orcamento falhou: {r.status_code} — {r.text}"
+    return r.json()
+
+
+async def consultar_item_estoque(
+    client: AsyncClient,
+    headers: dict,
+    item_estoque_id: str,
+) -> dict:
+    """Consulta item de estoque e retorna o JSON."""
+    r = await client.get(f"{_BASE_ITENS}/{item_estoque_id}", headers=headers)
+    assert r.status_code == 200, f"consultar_item_estoque falhou: {r.status_code} — {r.text}"
+    return r.json()
+
+
+async def detalhar_os(
+    client: AsyncClient,
+    headers: dict,
+    os_id: str,
+) -> dict:
+    """Consulta detalhe da OS e retorna o JSON."""
+    r = await client.get(f"{_BASE_OS}/{os_id}", headers=headers)
+    assert r.status_code == 200, f"detalhar_os falhou: {r.status_code} — {r.text}"
+    return r.json()
+
+
+def encontrar_item_os_por_id(detalhe_os: dict, item_os_id: str) -> dict | None:
+    """Encontra um item da OS pelo seu ID, sem assumir ordem."""
+    return next((i for i in detalhe_os.get("itens", []) if i["id"] == item_os_id), None)
+
+
+def encontrar_item_os_por_item_estoque_id(detalhe_os: dict, item_estoque_id: str) -> dict | None:
+    """Encontra um item da OS pelo item_estoque_id, sem assumir ordem."""
+    return next(
+        (i for i in detalhe_os.get("itens", []) if i["item_estoque_id"] == item_estoque_id),
+        None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Factories para fluxo de confirmação de recebimento
+# ---------------------------------------------------------------------------
+
+
+async def criar_os_aguardando_itens_com_um_item_a_receber(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS em AGUARDANDO_ITENS com um único item A_RECEBER ativo.
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo, servico,
+        item_estoque,
+        ordem_servico,
+        ordem_servico_item,
+        orcamento,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        email=f"cliente-rec1-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00")
+    item_estoque = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="220.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Correia com desgaste critico"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"]},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item = r.json()
+    assert os_item["status"] == "A_RECEBER", f"item deveria ser A_RECEBER, mas é {os_item['status']}"
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/orcamento/aprovar", headers=atendente["headers"])
+    assert r.status_code == 200
+    ordem_servico_atualizada = await detalhar_os(client, atendente["headers"], os_id)
+    assert ordem_servico_atualizada["status"] == "AGUARDANDO_ITENS"
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_estoque": item_estoque,
+        "ordem_servico": ordem_servico_atualizada,
+        "ordem_servico_item": os_item,
+        "orcamento": orcamento,
+    }
+
+
+async def criar_os_aguardando_itens_com_dois_itens_a_receber(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS em AGUARDANDO_ITENS com dois itens A_RECEBER ativos.
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo, servico,
+        item_estoque_1, item_estoque_2,
+        ordem_servico,
+        ordem_servico_item_1, ordem_servico_item_2,
+        orcamento,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        email=f"cliente-rec2-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="150.00")
+    item_estoque_1 = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="100.00",
+    )
+    item_estoque_2 = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="200.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Freios e pastilhas com desgaste"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"]},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque_1["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_1 = r.json()
+    assert os_item_1["status"] == "A_RECEBER"
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque_2["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_2 = r.json()
+    assert os_item_2["status"] == "A_RECEBER"
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/orcamento/aprovar", headers=atendente["headers"])
+    assert r.status_code == 200
+    ordem_servico_atualizada = await detalhar_os(client, atendente["headers"], os_id)
+    assert ordem_servico_atualizada["status"] == "AGUARDANDO_ITENS"
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_estoque_1": item_estoque_1,
+        "item_estoque_2": item_estoque_2,
+        "ordem_servico": ordem_servico_atualizada,
+        "ordem_servico_item_1": os_item_1,
+        "ordem_servico_item_2": os_item_2,
+        "orcamento": orcamento,
+    }
+
+
+async def criar_os_aguardando_itens_com_item_a_receber_e_item_cancelado(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS em AGUARDANDO_ITENS com:
+      - um item A_RECEBER ativo;
+      - um segundo item removido/cancelado antes do diagnóstico ser concluído.
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        item_estoque_principal,
+        ordem_servico,
+        ordem_servico_item_principal,
+        orcamento,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        email=f"cliente-canc-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00")
+    item_principal = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="220.00",
+    )
+    item_a_cancelar = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="100.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Correia e amortecedor com desgaste"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"]},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    # Adicionar item principal (A_RECEBER)
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_principal["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_principal = r.json()
+    assert os_item_principal["status"] == "A_RECEBER"
+
+    # Adicionar item a cancelar (A_RECEBER) e depois remover
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_a_cancelar["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item_cancelado = r.json()
+
+    # Remover/cancelar o segundo item via DELETE
+    r = await client.delete(
+        f"{_BASE_OS}/{os_id}/itens/{os_item_cancelado['id']}",
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 204, f"remover item falhou: {r.status_code} — {r.text}"
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/orcamento/aprovar", headers=atendente["headers"])
+    assert r.status_code == 200
+    ordem_servico_atualizada = await detalhar_os(client, atendente["headers"], os_id)
+    assert ordem_servico_atualizada["status"] == "AGUARDANDO_ITENS"
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "item_estoque_principal": item_principal,
+        "ordem_servico": ordem_servico_atualizada,
+        "ordem_servico_item_principal": os_item_principal,
+        "orcamento": orcamento,
+    }
+
+
+async def criar_os_diagnostico_concluido_com_item_a_receber_sem_aprovacao(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Prepara OS em DIAGNOSTICO_CONCLUIDO com item A_RECEBER, sem gerar/aprovar orçamento.
+
+    Retorna:
+      {
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        item_estoque,
+        ordem_servico,
+        ordem_servico_item,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        email=f"cliente-neg-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00")
+    item_estoque = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=0,
+        valor_unitario="220.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste na correia"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"]},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque["id"], "quantidade": 1},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201
+    os_item = r.json()
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200
+    ordem_servico = r.json()
+
+    return {
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "item_estoque": item_estoque,
+        "ordem_servico": ordem_servico,
+        "ordem_servico_item": os_item,
+    }
+
+
 async def criar_os_com_orcamento_comunicado_misto(
     client: AsyncClient,
     admin_headers: dict,

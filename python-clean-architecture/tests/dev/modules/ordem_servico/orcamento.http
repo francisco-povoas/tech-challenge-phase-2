@@ -1,0 +1,542 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Execute as requisições de login abaixo e copie o valor de "access_token"
+## para as variáveis correspondentes.
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OWQ0ZDAwYi0zYmRjLTRjZWItYjExZC0xYmY0ZTg1OTI0Y2EiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc4MTE4MjZ9.lm9pdLoULN3DxGfO9Oa433UoTtVUj8BQ9GSOGePxoiA
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0YmY5ZDhhMC03ZTgzLTRmYjgtOWVjNi0wZDc4NzEyMzRhZjEiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3NzgxMTg2MX0.DqS1dF7BMAgR4ZlXzVvRfinlrQYdEDLqS6at7_mgxJI
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YTgxMWJlNC00ODEyLTQwNGUtOTA5ZC0xZWQ2ZmI0NzE1NmUiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3ODExOTA3fQ.s5woO2z3_b3HP6lZoRVDbkE3-_E67zatfCYYXfN0oDM
+
+## IDs das entidades — preencher após cada criação
+## Copiar o valor de "id" retornado na resposta de cada criação.
+
+@clienteId = 6deddd06-6e3c-4d1a-80b4-ef759b8f9363
+@veiculoId = 823ce3ff-62bc-4002-968c-c00e044f0532
+@servicoId = e383079a-55f1-4a41-abbb-48a9bd741593
+@itemComSaldoId = 25f3faa4-1b42-450b-af27-5f7dd9711a08
+@itemSemSaldoId = 84b213a8-3359-49dc-b53a-c4006ef7ac88
+
+@ordemServicoId = 1e583c7d-9647-4337-9cfe-62f39552a1cb
+@ordemServicoServicoId = 5a86dda5-ecd4-4b9a-94cd-6cc9f44a380d
+@ordemServicoItemReservadoId = 3a494c48-e78d-4ee7-a8a0-bf9950519898
+@ordemServicoItemAReceberId = 02b12704-c37a-4b41-b8b9-64174affce62
+
+## Variáveis para cenários negativos (OSs adicionais)
+@ordemServicoSemOrcamentoId =
+@ordemServicoRecebidaId =
+@ordemServicoEmDiagnosticoId =
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA DE TESTES
+##
+##  [PREPARAÇÃO]
+##  1.  Login admin
+##  2.  Criar usuário Atendente
+##  3.  Login Atendente
+##  4.  Criar usuário Mecânico
+##  5.  Login Mecânico
+##  6.  Criar cliente com email e telefone
+##  7.  Criar veículo do cliente
+##  8.  Criar serviço (valor_base: 180.00)
+##  9.  Criar item COM saldo (2 x 85.00 = 170.00)
+##  10. Criar item SEM saldo (1 x 220.00 = 220.00)
+##  11. Criar OS
+##  12. Iniciar diagnóstico
+##  13. Registrar diagnóstico
+##  14. Adicionar serviço → total_servicos = 180.00
+##  15. Adicionar item COM saldo → RESERVADO
+##  16. Adicionar item SEM saldo → A_RECEBER
+##  17. Concluir diagnóstico → status DIAGNOSTICO_CONCLUIDO
+##
+##  Totais esperados no orçamento:
+##  total_servicos = 180.00
+##  total_itens    = 170.00 + 220.00 = 390.00
+##  total_geral    = 570.00
+##
+##  [FLUXO FELIZ — ORÇAMENTO]
+##  ORC-01. Gerar orçamento com Atendente        → 201, COMUNICADO, OS → AGUARDANDO_APROVACAO
+##  ORC-02. Obter orçamento da OS                → 200, COMUNICADO, totais corretos
+##  ORC-03. Listar comunicações do orçamento     → 200, WHATSAPP + EMAIL
+##  ORC-04. Detalhar OS após orçamento           → 200, status AGUARDANDO_APROVACAO
+##
+##  [CENÁRIOS NEGATIVOS]
+##  ORC-NEG-01. Sem token                        → 401
+##  ORC-NEG-02. Mecânico não gera orçamento      → 403
+##  ORC-NEG-03. OS RECEBIDA                      → 422
+##  ORC-NEG-04. OS EM_DIAGNOSTICO               → 422
+##  ORC-NEG-05. Orçamento duplicado              → 409
+##  ORC-NEG-06. Obter orçamento inexistente      → 404
+##  ORC-NEG-07. Listar comunicações sem orçamento→ 404
+## ============================================================
+
+
+## ============================================================
+## PREPARAÇÃO — autenticação e dados de suporte
+## ============================================================
+
+### [1] Login admin
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@example.com&password=admin123
+
+## ► Copiar "access_token" para @tokenAdmin
+
+###
+
+### [2] Criar usuário Atendente
+## (pode pular se já existir — usar login abaixo)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Ana Atendente ORC",
+    "email": "ana.atendente.orc@example.com",
+    "senha": "senha123",
+    "perfis": ["Atendente"]
+}
+
+###
+
+### [3] Login Atendente
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=ana.atendente.orc@example.com&password=senha123
+
+## ► Copiar "access_token" para @tokenAtendente
+
+###
+
+### [4] Criar usuário Mecânico
+## (pode pular se já existir — usar login abaixo)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Bruno Mecanico ORC",
+    "email": "bruno.mecanico.orc@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
+}
+
+###
+
+### [5] Login Mecânico
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=bruno.mecanico.orc@example.com&password=senha123
+
+## ► Copiar "access_token" para @tokenMecanico
+
+###
+
+### [6] Criar cliente com email e telefone
+## IMPORTANTE: o cliente DEVE ter email e telefone para o envio do orçamento.
+## Sem esses dados, a geração do orçamento falhará.
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Fernanda Oliveira",
+    "cpf_cnpj": "71428793860",
+    "telefone": "11991234567",
+    "email": "fernanda.oliveira@example.com",
+    "cep": "04538132",
+    "logradouro": "Av. Brigadeiro Faria Lima",
+    "numero": "3477",
+    "complemento": null,
+    "bairro": "Itaim Bibi",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+## ► Copiar "id" para @clienteId
+
+###
+
+### [7] Criar veículo do cliente
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "ORC1A23",
+    "marca": "Honda",
+    "modelo": "Civic",
+    "ano_fabricacao": 2022,
+    "ano_modelo": 2023,
+    "cor": "Preto"
+}
+
+## ► Copiar "id" para @veiculoId
+
+###
+
+### [8] Criar serviço — valor_base: 180.00
+## Contribuição no orçamento: total_servicos = 180.00
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Alinhamento e Balanceamento",
+    "descricao": "Alinhamento computadorizado e balanceamento dos 4 pneus",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 60
+}
+
+## ► Copiar "id" para @servicoId
+
+###
+
+### [9] Criar item de estoque COM saldo (10 unidades, R$ 85,00 cada)
+## Na OS: quantidade 2 → status RESERVADO → subtotal = 2 x 85.00 = 170.00
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Filtro de oleo premium",
+    "descricao": "Filtro compativel com motores 1.5 a 2.0",
+    "codigo": "FO-PRE-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 2,
+    "valor_unitario": 85.00
+}
+
+## ► Copiar "id" para @itemComSaldoId
+
+###
+
+### [10] Criar item de estoque SEM saldo (0 unidades, R$ 220,00 cada)
+## Na OS: quantidade 1 → status A_RECEBER → subtotal = 1 x 220.00 = 220.00
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "PECA",
+    "nome": "Correia dentada kit completo",
+    "descricao": "Kit correia dentada com tensor e bomba dagua",
+    "codigo": "CD-KIT-002",
+    "quantidade_disponivel": 0,
+    "quantidade_minima": 1,
+    "valor_unitario": 220.00
+}
+
+## ► Copiar "id" para @itemSemSaldoId
+
+
+## ============================================================
+## PREPARAÇÃO — OS até DIAGNOSTICO_CONCLUIDO
+## ============================================================
+
+###
+
+### [11] Criar OS — Atendente abre OS com queixa inicial
+## Esperado: 201 — status RECEBIDA
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "Cliente relata vibracao no volante em alta velocidade e desgaste irregular nos pneus dianteiros."
+}
+
+## ► Copiar "id" para @ordemServicoId
+
+###
+
+### [12] Iniciar diagnóstico — Mecânico inicia
+## Esperado: 200 — status EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [13] Registrar diagnóstico
+## Esperado: 200 — campo diagnostico preenchido, status permanece EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Alinhamento e balanceamento fora dos limites. Filtro de oleo com 12.000 km de uso. Correia dentada com sinais de desgaste acima do recomendado. Substituicao preventiva indicada."
+}
+
+###
+
+### [14] Adicionar serviço à OS (valor_unitario = 180.00)
+## Esperado: 201 — cancelado: false
+## Contribuição no orçamento: +180.00 em total_servicos
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoId}}",
+    "observacao": "Necessario apos diagnostico de vibracao e desgaste irregular."
+}
+
+## ► Copiar "id" para @ordemServicoServicoId
+
+###
+
+### [15] Adicionar item COM saldo (quantidade: 2, valor: 85.00 → subtotal 170.00)
+## Esperado: 201 — status RESERVADO
+## Contribuição no orçamento: +170.00 em total_itens
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemComSaldoId}}",
+    "quantidade": 2
+}
+
+## ► Copiar "id" para @ordemServicoItemReservadoId
+
+###
+
+### [16] Adicionar item SEM saldo (quantidade: 1, valor: 220.00 → subtotal 220.00)
+## Esperado: 201 — status A_RECEBER
+## Contribuição no orçamento: +220.00 em total_itens
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemSemSaldoId}}",
+    "quantidade": 1
+}
+
+## ► Copiar "id" para @ordemServicoItemAReceberId
+
+###
+
+### [17] Concluir diagnóstico
+## Esperado: 200 — status DIAGNOSTICO_CONCLUIDO
+## A OS está pronta para geração de orçamento.
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+## ============================================================
+## FLUXO FELIZ — ORÇAMENTO
+##
+## Totais esperados:
+##   total_servicos = 180.00   (1 serviço ativo x 180.00)
+##   total_itens    = 390.00   (2 x 85.00 RESERVADO + 1 x 220.00 A_RECEBER)
+##   total_geral    = 570.00
+## ============================================================
+
+###
+
+### [ORC-01] Gerar orçamento — Atendente
+## Esperado: 201
+## Orçamento status: COMUNICADO
+## OS status:        AGUARDANDO_APROVACAO
+## total_servicos =  180.00
+## total_itens    =  390.00  (170.00 RESERVADO + 220.00 A_RECEBER)
+## total_geral    =  570.00
+## comunicacoes:
+##   - canal: WHATSAPP | sucesso: true | mensagem: "WhatsApp enviado" | provedor: "mock"
+##   - canal: EMAIL    | sucesso: true | mensagem: "E-mail enviado"   | provedor: "mock"
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+## ► Validar na resposta:
+##   - "status": "COMUNICADO"
+##   - "total_servicos": 180.00
+##   - "total_itens": 390.00
+##   - "total_geral": 570.00
+##   - "comunicado_em" preenchido
+##   - array "comunicacoes" com 2 entradas (WHATSAPP e EMAIL)
+
+###
+
+### [ORC-02] Obter orçamento da OS
+## Esperado: 200
+## Validar:
+##   - "status": "COMUNICADO"
+##   - "total_servicos", "total_itens", "total_geral" corretos
+##   - "comunicado_em" preenchido
+##   - "comunicacoes" listadas
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ORC-03] Listar comunicações do orçamento
+## Esperado: 200 — lista com 2 entradas
+## Validar:
+##   Entrada 1:
+##     - "canal": "WHATSAPP"
+##     - "destino": "11991234567"  (telefone do cliente)
+##     - "sucesso": true
+##     - "mensagem": "WhatsApp enviado"
+##     - "provedor": "mock"
+##   Entrada 2:
+##     - "canal": "EMAIL"
+##     - "destino": "fernanda.oliveira@example.com"
+##     - "sucesso": true
+##     - "mensagem": "E-mail enviado"
+##     - "provedor": "mock"
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento/comunicacoes HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ORC-04] Detalhar OS após geração do orçamento
+## Esperado: 200 — status AGUARDANDO_APROVACAO
+## Validar:
+##   - "status": "AGUARDANDO_APROVACAO"
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ORC-05] Mecânico pode consultar orçamento (somente leitura)
+## Esperado: 200
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [ORC-06] Mecânico pode listar comunicações (somente leitura)
+## Esperado: 200
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento/comunicacoes HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+
+## ============================================================
+## CENÁRIOS NEGATIVOS — ORÇAMENTO
+## ============================================================
+
+###
+
+### [ORC-NEG-01] Gerar orçamento sem token
+## Esperado: 401 — não autenticado
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+
+{}
+
+###
+
+### [ORC-NEG-02] Mecânico tenta gerar orçamento
+## Esperado: 403 — permissão insuficiente (Mecânico não pode gerar orçamento)
+## ATENÇÃO: usar uma OS diferente de {{ordemServicoId}},
+## pois aquela já tem orçamento e retornaria 409 antes do 403.
+## Preencher @ordemServicoSemOrcamentoId com uma OS DIAGNOSTICO_CONCLUIDO sem orçamento.
+## (Criar a OS nas etapas 11–17 com novos dados e não gerar orçamento para ela.)
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoSemOrcamentoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{}
+
+###
+
+### [ORC-NEG-03] Gerar orçamento para OS em status RECEBIDA
+## Preparação: criar nova OS e NÃO iniciar diagnóstico.
+## Preencher @ordemServicoRecebidaId com o "id" retornado abaixo.
+##
+## Criar OS RECEBIDA:
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "OS criada para teste negativo — status RECEBIDA."
+}
+
+## ► Copiar "id" para @ordemServicoRecebidaId
+
+###
+
+### [ORC-NEG-03b] Tentativa de gerar orçamento para OS RECEBIDA
+## Esperado: 422 — status inválido para geração de orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoRecebidaId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [ORC-NEG-04] Gerar orçamento para OS em status EM_DIAGNOSTICO
+## Preparação: criar nova OS, iniciar diagnóstico, NÃO concluir.
+## Preencher @ordemServicoEmDiagnosticoId com o "id" retornado.
+##
+## Criar OS:
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "OS criada para teste negativo — status EM_DIAGNOSTICO."
+}
+
+## ► Copiar "id" para @ordemServicoEmDiagnosticoId
+
+###
+
+### [ORC-NEG-04b] Iniciar diagnóstico (não concluir)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoEmDiagnosticoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [ORC-NEG-04c] Tentativa de gerar orçamento para OS EM_DIAGNOSTICO
+## Esperado: 422 — status inválido para geração de orçamento
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoEmDiagnosticoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [ORC-NEG-05] Tentativa de gerar orçamento duplicado
+## Usar a OS principal {{ordemServicoId}} que já tem orçamento gerado (ORC-01).
+## Esperado: 409 — já existe orçamento para esta OS
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [ORC-NEG-06] Obter orçamento de OS sem orçamento
+## Usar @ordemServicoSemOrcamentoId (OS DIAGNOSTICO_CONCLUIDO, mas sem orçamento gerado).
+## Esperado: 404 — orçamento não encontrado
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoSemOrcamentoId}}/orcamento HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ORC-NEG-07] Listar comunicações de OS sem orçamento
+## Usar @ordemServicoSemOrcamentoId.
+## Esperado: 404 — orçamento não encontrado (sem orçamento, sem comunicações)
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoSemOrcamentoId}}/orcamento/comunicacoes HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}

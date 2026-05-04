@@ -1644,6 +1644,174 @@ async def criar_os_finalizada_com_servico_e_tempo(
     }
 
 
+async def registrar_pagamento_os(
+    client: AsyncClient,
+    headers: dict,
+    os_id: str,
+    forma_pagamento: str = "PIX",
+    valor_pago: str = "270.00",
+    observacao: str | None = "Pagamento recebido via PIX.",
+) -> dict:
+    """Registra pagamento da OS e retorna o JSON do response."""
+    payload: dict = {"forma_pagamento": forma_pagamento, "valor_pago": valor_pago}
+    if observacao is not None:
+        payload["observacao"] = observacao
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/registrar-pagamento", json=payload, headers=headers
+    )
+    assert r.status_code == 200, f"registrar_pagamento_os falhou: {r.status_code} — {r.text}"
+    return r.json()
+
+
+async def entregar_os(
+    client: AsyncClient,
+    headers: dict,
+    os_id: str,
+) -> dict:
+    """Entrega a OS e retorna o JSON do response."""
+    r = await client.patch(f"{_BASE_OS}/{os_id}/entregar", headers=headers)
+    assert r.status_code == 200, f"entregar_os falhou: {r.status_code} — {r.text}"
+    return r.json()
+
+
+async def criar_os_finalizada_para_pagamento_entrega(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Factory — OS FINALIZADA com orçamento aprovado, serviço com tempo, item EM_USO.
+
+    Configuração:
+      - serviço: valor_base=180.00
+      - item_estoque: disponível=10, reservado=0, valor_unitario=45.00
+      - item na OS: quantidade=2 → RESERVADO → EM_USO
+      - total_servicos=180.00, total_itens=90.00, total_geral=270.00
+      - estoque após reserva: disponível=8, reservado=2
+
+    Retorna:
+      {
+        admin_headers,
+        atendente, atendente_headers,
+        mecanico, mecanico_headers,
+        cliente, veiculo, servico,
+        item_estoque,
+        ordem_servico, ordem_servico_servico, ordem_servico_item,
+        orcamento,
+      }
+    """
+    atendente = await criar_atendente(client, admin_headers)
+    mecanico = await criar_mecanico(client, admin_headers)
+
+    cliente = await criar_cliente(
+        client, admin_headers,
+        email=f"cliente-pag-{uuid.uuid4().hex[:8]}@example.com",
+    )
+    veiculo = await criar_veiculo(client, admin_headers, cliente["id"])
+    servico = await criar_servico(client, admin_headers, valor_base="180.00", tempo_medio_minutos=60)
+    item_estoque = await criar_item_estoque(
+        client, admin_headers,
+        quantidade_disponivel=10,
+        valor_unitario="45.00",
+    )
+
+    os_ = await criar_ordem_servico(client, atendente["headers"], cliente["id"], veiculo["id"])
+    os_id = os_["id"]
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/iniciar-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200, f"iniciar-diagnostico: {r.status_code} — {r.text}"
+
+    r = await client.patch(
+        f"{_BASE_OS}/{os_id}/diagnostico",
+        json={"diagnostico": "Desgaste nas pastilhas de freio"},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 200, f"registrar-diagnostico: {r.status_code} — {r.text}"
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/servicos",
+        json={"servico_id": servico["id"], "observacao": None},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201, f"adicionar-servico: {r.status_code} — {r.text}"
+    ordem_servico_servico = r.json()
+
+    r = await client.post(
+        f"{_BASE_OS}/{os_id}/itens",
+        json={"item_estoque_id": item_estoque["id"], "quantidade": 2},
+        headers=mecanico["headers"],
+    )
+    assert r.status_code == 201, f"adicionar-item: {r.status_code} — {r.text}"
+    ordem_servico_item = r.json()
+    assert ordem_servico_item["status"] == "RESERVADO"
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/concluir-diagnostico", headers=mecanico["headers"])
+    assert r.status_code == 200, f"concluir-diagnostico: {r.status_code} — {r.text}"
+
+    orcamento = await gerar_orcamento(client, atendente["headers"], os_id)
+    await aprovar_orcamento(client, atendente["headers"], os_id)
+
+    await iniciar_execucao_os(client, mecanico["headers"], os_id)
+
+    await registrar_tempo_executado_servico(
+        client, mecanico["headers"], os_id, ordem_servico_servico["id"], 60
+    )
+
+    r = await client.patch(f"{_BASE_OS}/{os_id}/finalizar", headers=mecanico["headers"])
+    assert r.status_code == 200, f"finalizar: {r.status_code} — {r.text}"
+
+    ordem_servico = await detalhar_os(client, atendente["headers"], os_id)
+    assert ordem_servico["status"] == "FINALIZADA"
+
+    return {
+        "admin_headers": admin_headers,
+        "atendente": atendente,
+        "atendente_headers": atendente["headers"],
+        "mecanico": mecanico,
+        "mecanico_headers": mecanico["headers"],
+        "cliente": cliente,
+        "veiculo": veiculo,
+        "servico": servico,
+        "item_estoque": item_estoque,
+        "ordem_servico": ordem_servico,
+        "ordem_servico_servico": ordem_servico_servico,
+        "ordem_servico_item": ordem_servico_item,
+        "orcamento": orcamento,
+    }
+
+
+async def criar_os_finalizada_com_pagamento(
+    client: AsyncClient,
+    admin_headers: dict,
+) -> dict:
+    """
+    Factory — OS FINALIZADA com pagamento registrado (PIX, 270.00).
+
+    Reutiliza criar_os_finalizada_para_pagamento_entrega e registra pagamento
+    via atendente_headers.
+
+    Resultado esperado:
+      OS.status = FINALIZADA
+      pagamento_registrado_em preenchido
+      forma_pagamento = PIX
+      valor_pago = 270.00
+      item.status = EM_USO
+      estoque.disponivel = 8, reservado = 2
+    """
+    dados = await criar_os_finalizada_para_pagamento_entrega(client, admin_headers)
+    os_id = dados["ordem_servico"]["id"]
+
+    await registrar_pagamento_os(
+        client,
+        dados["atendente_headers"],
+        os_id,
+        forma_pagamento="PIX",
+        valor_pago="270.00",
+        observacao="Pagamento recebido via PIX.",
+    )
+    dados["ordem_servico"] = await detalhar_os(client, dados["atendente_headers"], os_id)
+    return dados
+
+
 async def criar_os_em_execucao_com_servico_e_tempo(
     client: AsyncClient,
     admin_headers: dict,

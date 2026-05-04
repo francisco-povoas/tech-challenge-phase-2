@@ -1,6 +1,7 @@
 """Modelo ORM da tabela ordem_servico."""
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
@@ -36,4 +37,19 @@ class OrdemServicoModel(SQLModel, table=True):
     )
     diagnostico_concluido_em: Optional[datetime] = Field(
         default=None, sa_column=sa.Column(sa.DateTime(timezone=True), nullable=True)
+    )
+
+    # Campos de pagamento
+    pagamento_registrado_em: Optional[datetime] = Field(
+        default=None, sa_column=sa.Column(sa.DateTime(timezone=True), nullable=True)
+    )
+    forma_pagamento: Optional[str] = Field(
+        default=None, sa_column=sa.Column(sa.String(30), nullable=True)
+    )
+    valor_pago: Optional[Decimal] = Field(
+        default=None,
+        sa_column=sa.Column(sa.Numeric(precision=12, scale=2), nullable=True),
+    )
+    pagamento_observacao: Optional[str] = Field(
+        default=None, sa_column=sa.Column(sa.Text, nullable=True)
     )

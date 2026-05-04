@@ -61,6 +61,12 @@ from app.modules.ordens_servico.application.use_cases.obter_estatistica_tempo_ex
 from app.modules.ordens_servico.application.use_cases.listar_execucoes_servico import (
     ListarExecucoesServicoUseCase,
 )
+from app.modules.ordens_servico.application.use_cases.registrar_pagamento_ordem_servico import (
+    RegistrarPagamentoOrdemServicoUseCase,
+)
+from app.modules.ordens_servico.application.use_cases.entregar_ordem_servico import (
+    EntregarOrdemServicoUseCase,
+)
 
 __all__ = [
     "CriarOrdemServicoUseCase",
@@ -84,4 +90,6 @@ __all__ = [
     "FinalizarOrdemServicoUseCase",
     "ObterEstatisticaTempoExecucaoServicoUseCase",
     "ListarExecucoesServicoUseCase",
+    "RegistrarPagamentoOrdemServicoUseCase",
+    "EntregarOrdemServicoUseCase",
 ]

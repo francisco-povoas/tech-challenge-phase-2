@@ -53,6 +53,14 @@ class RegistrarTempoExecutadoServicoRequest:
     tempo_executado_minutos: int
 
 
+@dataclass(frozen=True, kw_only=True)
+class RegistrarPagamentoOrdemServicoRequest:
+    """Body para registrar pagamento de uma OS finalizada."""
+    forma_pagamento: str
+    valor_pago: Decimal
+    observacao: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Response DTOs
 # ---------------------------------------------------------------------------
@@ -112,6 +120,10 @@ class OrdemServicoDetalheResponse:
     atualizado_em: datetime
     iniciado_diagnostico_em: Optional[datetime]
     diagnostico_concluido_em: Optional[datetime]
+    pagamento_registrado_em: Optional[datetime] = None
+    forma_pagamento: Optional[str] = None
+    valor_pago: Optional[Decimal] = None
+    pagamento_observacao: Optional[str] = None
     servicos: list[OrdemServicoServicoResponse] = field(default_factory=list)
     itens: list[OrdemServicoItemResponse] = field(default_factory=list)
 

@@ -43,6 +43,8 @@ from app.modules.ordens_servico.application.use_cases import (
     FinalizarOrdemServicoUseCase,
     ObterEstatisticaTempoExecucaoServicoUseCase,
     ListarExecucoesServicoUseCase,
+    RegistrarPagamentoOrdemServicoUseCase,
+    EntregarOrdemServicoUseCase,
 )
 
 
@@ -185,6 +187,14 @@ def get_finalizar_ordem_servico(uow: _UoWDep) -> FinalizarOrdemServicoUseCase:
     return FinalizarOrdemServicoUseCase(uow=uow)
 
 
+def get_registrar_pagamento(uow: _UoWDep) -> RegistrarPagamentoOrdemServicoUseCase:
+    return RegistrarPagamentoOrdemServicoUseCase(uow=uow)
+
+
+def get_entregar_ordem_servico(uow: _UoWDep) -> EntregarOrdemServicoUseCase:
+    return EntregarOrdemServicoUseCase(uow=uow)
+
+
 def get_obter_estatistica_tempo_execucao_servico(
     repo: _RepoDep,
     servico_repo: _ServicoRepoDep,
@@ -230,3 +240,5 @@ RegistrarTempoExecutadoDep = Annotated[RegistrarTempoExecutadoServicoUseCase, De
 FinalizarOrdemServicoDep = Annotated[FinalizarOrdemServicoUseCase, Depends(get_finalizar_ordem_servico)]
 ObterEstatisticaTempoExecucaoDep = Annotated[ObterEstatisticaTempoExecucaoServicoUseCase, Depends(get_obter_estatistica_tempo_execucao_servico)]
 ListarExecucoesServicoDep = Annotated[ListarExecucoesServicoUseCase, Depends(get_listar_execucoes_servico)]
+RegistrarPagamentoDep = Annotated[RegistrarPagamentoOrdemServicoUseCase, Depends(get_registrar_pagamento)]
+EntregarOrdemServicoDep = Annotated[EntregarOrdemServicoUseCase, Depends(get_entregar_ordem_servico)]

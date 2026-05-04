@@ -1,0 +1,467 @@
+@baseUrl = http://localhost:8000
+
+## Tokens JWT para autenticação
+## Execute as requisições de login abaixo e copie o valor de "access_token"
+## para as variáveis correspondentes.
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDQ2M2Y4Yy00NzdhLTRlZWItYTg1Ny1iNjExY2FmZTcwNzkiLCJwZXJmaXMiOlsiQWRtaW5pc3RyYWRvciJdLCJleHAiOjE3Nzc4NTQ5MTJ9.k2Vgx3KzyfCmqaRR2rA8UwjFlSJZRUckTHL-G0sdUJw
+@tokenAtendente = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkMzk4YjUxMS1hMDRlLTQyNTctYjYyNy03YzhlNzlmZTJjNzEiLCJwZXJmaXMiOlsiQXRlbmRlbnRlIl0sImV4cCI6MTc3Nzg1NDkzNX0._9ZQtb7368Rvfu4sj6TspeqWJI97_duY6PfgpMn1ABM
+@tokenMecanico = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3MGRiMDc1OC05Y2JhLTQ1Y2QtYWIxNS02ZDc0NGZjOTA0MmIiLCJwZXJmaXMiOlsiTWVjYW5pY28iXSwiZXhwIjoxNzc3ODU0OTU1fQ.nl8EgvLTI6GmjRxJ2qIEWa1eqmfyIh7iYa9VB-26e1w
+
+## ============================================================
+## IDs — OS principal (fluxo feliz)
+## ============================================================
+
+@clienteId = 932bce16-8f21-47bf-8502-aeccb1445cdc
+@veiculoId = f08195db-2b32-40bc-8dda-969e05f4f9ac
+@servicoId = 6b45df4f-1a0d-44db-a06b-6a6489150810
+@itemEstoqueId = 8b0772cc-fbb1-4991-82d3-43e8c19865fd
+@ordemServicoId = c5f4b65b-4ee8-4e96-93a3-bdd3c802234f
+@ordemServicoServicoId = 7ec10fe5-7e4c-4a7e-97d2-1755c7962b88
+@ordemServicoItemId = 08f8fabe-bc17-4c39-be7e-4e6ad5c06514
+
+## ============================================================
+## SEQUÊNCIA SUGERIDA
+##
+## [PREPARAÇÃO — AUTENTICAÇÃO]
+##  AUTH-01.  Login admin
+##  AUTH-02.  Criar usuário Atendente Pagamento
+##  AUTH-03.  Login Atendente
+##  AUTH-04.  Criar usuário Mecânico Pagamento
+##  AUTH-05.  Login Mecânico
+##
+## [OS — PREPARAR FINALIZADA]
+##  PREP-01.  Criar cliente                   → @clienteId
+##  PREP-02.  Criar veículo                   → @veiculoId
+##  PREP-03.  Criar serviço                   → @servicoId
+##  PREP-04.  Criar item de estoque (saldo 10) → @itemEstoqueId
+##  PREP-05.  Criar OS                        → @ordemServicoId
+##  PREP-06.  Iniciar diagnóstico
+##  PREP-07.  Registrar diagnóstico
+##  PREP-08.  Adicionar serviço à OS           → @ordemServicoServicoId
+##  PREP-09.  Adicionar item à OS (qtd=2)      → @ordemServicoItemId
+##  PREP-10.  Consultar estoque antes (disp=8, res=2)
+##  PREP-11.  Concluir diagnóstico
+##  PREP-12.  Gerar orçamento
+##  PREP-13.  Aprovar orçamento
+##  PREP-14.  Iniciar execução
+##  PREP-15.  Registrar tempo executado
+##  PREP-16.  Finalizar OS → FINALIZADA
+##  PREP-17.  Detalhar OS antes do pagamento
+##
+## [PAGAMENTO]
+##  PAG-01.   Mecânico NÃO registra pagamento  → 403
+##  PAG-02.   Atendente registra pagamento      → 200
+##  PAG-03.   Detalhar OS após pagamento
+##  PAG-04.   Duplicar pagamento → 409
+##
+## [ENTREGA]
+##  ENT-01.   Mecânico NÃO entrega OS           → 403
+##  ENT-02.   Atendente entrega OS              → 200
+##  ENT-03.   Detalhar OS após entrega
+##  ENT-04.   Consultar estoque após entrega (disp=8, res=0)
+##  ENT-05.   Entregar novamente → 422
+##
+## [NEGATIVO — SEM TOKEN]
+##  NEG-01.   Registrar pagamento sem token     → 401/403
+## ============================================================
+
+
+## ============================================================
+## PREPARAÇÃO — AUTENTICAÇÃO
+## ============================================================
+
+### [AUTH-01] Login admin
+## ► Copiar "access_token" para @tokenAdmin
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@example.com&password=admin123
+
+###
+
+### [AUTH-02] Criar usuário Atendente Pagamento
+## (pode pular se já existir — ir direto para AUTH-03)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Atendente Pagamento",
+    "email": "atendente.pagamento@example.com",
+    "senha": "senha123",
+    "perfis": ["Atendente"]
+}
+
+###
+
+### [AUTH-03] Login Atendente Pagamento
+## ► Copiar "access_token" para @tokenAtendente
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=atendente.pagamento@example.com&password=senha123
+
+###
+
+### [AUTH-04] Criar usuário Mecânico Pagamento
+## (pode pular se já existir — ir direto para AUTH-05)
+POST {{baseUrl}}/api/v1/usuarios HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+    "nome": "Mecanico Pagamento",
+    "email": "mecanico.pagamento@example.com",
+    "senha": "senha123",
+    "perfis": ["Mecanico"]
+}
+
+###
+
+### [AUTH-05] Login Mecânico Pagamento
+## ► Copiar "access_token" para @tokenMecanico
+POST {{baseUrl}}/api/v1/auth/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=mecanico.pagamento@example.com&password=senha123
+
+###
+
+
+## ============================================================
+## OS — PREPARAR FINALIZADA
+## ============================================================
+
+### [PREP-01] Criar cliente
+## ► Copiar "id" para @clienteId
+POST {{baseUrl}}/api/v1/clientes HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo_pessoa": "PF",
+    "nome_razao_social": "Cliente Pagamento Entrega",
+    "cpf_cnpj": "85219938005",
+    "telefone": "11900000901",
+    "email": "cliente.pagamento.entrega@example.com",
+    "cep": "01310100",
+    "logradouro": "Av. Paulista",
+    "numero": "901",
+    "complemento": null,
+    "bairro": "Bela Vista",
+    "cidade": "Sao Paulo",
+    "uf": "SP"
+}
+
+###
+
+### [PREP-02] Criar veículo
+## ► Copiar "id" para @veiculoId
+POST {{baseUrl}}/api/v1/veiculos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "placa": "PAG1A01",
+    "marca": "Volkswagen",
+    "modelo": "Gol",
+    "ano_fabricacao": 2020,
+    "ano_modelo": 2020,
+    "cor": "Prata"
+}
+
+###
+
+### [PREP-03] Criar serviço do catálogo
+## ► Copiar "id" para @servicoId
+POST {{baseUrl}}/api/v1/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "nome": "Servico Pagamento Entrega",
+    "descricao": "Servico usado para validar pagamento e entrega",
+    "valor_base": 180.00,
+    "tempo_medio_minutos": 60
+}
+
+###
+
+### [PREP-04] Criar item de estoque com saldo (qtd_disponivel=10)
+## ► Copiar "id" para @itemEstoqueId
+POST {{baseUrl}}/api/v1/itens-estoque HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "tipo": "INSUMO",
+    "nome": "Item Pagamento Entrega",
+    "descricao": "Item usado para validar baixa na entrega",
+    "codigo": "PAG-ENT-001",
+    "quantidade_disponivel": 10,
+    "quantidade_minima": 1,
+    "valor_unitario": 45.00
+}
+
+###
+
+### [PREP-05] Criar OS
+## ► Copiar "id" para @ordemServicoId
+POST {{baseUrl}}/api/v1/ordens-servico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "cliente_id": "{{clienteId}}",
+    "veiculo_id": "{{veiculoId}}",
+    "queixa_inicial": "OS para validar pagamento e entrega"
+}
+
+###
+
+### [PREP-06] Iniciar diagnóstico
+## ► Esperado: OS.status = EM_DIAGNOSTICO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/iniciar-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [PREP-07] Registrar diagnóstico
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/diagnostico HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "diagnostico": "Servico identificado e aprovado para execucao."
+}
+
+###
+
+### [PREP-08] Adicionar serviço à OS
+## ► Copiar "id" para @ordemServicoServicoId
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/servicos HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "servico_id": "{{servicoId}}"
+}
+
+###
+
+### [PREP-09] Adicionar item à OS (quantidade=2)
+## ► Copiar "id" para @ordemServicoItemId
+## ► Esperado: item.status = RESERVADO
+## ► Esperado: estoque.quantidade_disponivel = 8, estoque.quantidade_reservada = 2
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/itens HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "item_estoque_id": "{{itemEstoqueId}}",
+    "quantidade": 2
+}
+
+###
+
+### [PREP-10] Consultar estoque antes da entrega
+## ► Esperado: quantidade_disponivel = 8, quantidade_reservada = 2
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [PREP-11] Concluir diagnóstico
+## ► Esperado: OS.status = DIAGNOSTICO_CONCLUIDO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/concluir-diagnostico HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [PREP-12] Gerar orçamento
+## ► Esperado: total_geral = 270.00 (180.00 serviço + 2 × 45.00 itens)
+## ► Esperado: OS.status = AGUARDANDO_APROVACAO, orcamento.status = COMUNICADO
+POST {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{}
+
+###
+
+### [PREP-13] Aprovar orçamento
+## ► Esperado: OS.status = APROVADA, orcamento.status = APROVADO
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/orcamento/aprovar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [PREP-14] Iniciar execução
+## ► Esperado: OS.status = EM_EXECUCAO
+## ► Esperado: item.status = EM_USO
+## ► Esperado: estoque permanece — disponivel=8, reservado=2
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/iniciar-execucao HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [PREP-15] Registrar tempo executado no serviço
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/servicos/{{ordemServicoServicoId}}/tempo-executado HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "tempo_executado_minutos": 60
+}
+
+###
+
+### [PREP-16] Finalizar OS
+## ► Esperado: OS.status = FINALIZADA
+## ► Esperado: item permanece EM_USO
+## ► Esperado: estoque permanece — disponivel=8, reservado=2
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/finalizar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [PREP-17] Detalhar OS antes do pagamento
+## ► Esperado: status = FINALIZADA
+## ► Esperado: pagamento_registrado_em = null
+## ► Esperado: forma_pagamento = null
+## ► Esperado: valor_pago = null
+## ► Esperado: pagamento_observacao = null
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+
+## ============================================================
+## PAGAMENTO
+## ============================================================
+
+### [PAG-01] Mecânico NÃO pode registrar pagamento
+## ► Esperado: HTTP 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/registrar-pagamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenMecanico}}
+
+{
+    "forma_pagamento": "PIX",
+    "valor_pago": "270.00",
+    "observacao": "Tentativa indevida pelo mecanico."
+}
+
+###
+
+### [PAG-02] Atendente registra pagamento com sucesso
+## ► Esperado: HTTP 200
+## ► Esperado: OS continua FINALIZADA
+## ► Esperado: pagamento_registrado_em preenchido
+## ► Esperado: forma_pagamento = PIX
+## ► Esperado: valor_pago = 270.00
+## ► Esperado: pagamento_observacao = "Pagamento recebido via PIX."
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/registrar-pagamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "forma_pagamento": "PIX",
+    "valor_pago": "270.00",
+    "observacao": "Pagamento recebido via PIX."
+}
+
+###
+
+### [PAG-03] Detalhar OS após pagamento
+## ► Esperado: status = FINALIZADA (não muda)
+## ► Esperado: pagamento_registrado_em preenchido
+## ► Esperado: forma_pagamento = PIX
+## ► Esperado: valor_pago = 270.00
+## ► Esperado: pagamento_observacao = "Pagamento recebido via PIX."
+## ► Esperado: item da OS ainda EM_USO
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [PAG-04] Não permite registrar pagamento novamente (duplicado)
+## ► Esperado: HTTP 409
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/registrar-pagamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "forma_pagamento": "PIX",
+    "valor_pago": "270.00",
+    "observacao": "Tentativa duplicada."
+}
+
+###
+
+
+## ============================================================
+## ENTREGA
+## ============================================================
+
+### [ENT-01] Mecânico NÃO pode entregar OS
+## ► Esperado: HTTP 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/entregar HTTP/1.1
+Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [ENT-02] Atendente entrega OS com sucesso
+## ► Esperado: HTTP 200
+## ► Esperado: OS.status = ENTREGUE
+## ► Esperado: item da OS status = CONSUMIDO
+## ► Esperado: estoque.quantidade_disponivel = 8 (não muda)
+## ► Esperado: estoque.quantidade_reservada = 0 (baixa as 2 unidades reservadas)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/entregar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ENT-03] Detalhar OS após entrega
+## ► Esperado: status = ENTREGUE
+## ► Esperado: pagamento continua preenchido (pagamento_registrado_em, forma_pagamento, valor_pago)
+## ► Esperado: item da OS status = CONSUMIDO
+GET {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ENT-04] Consultar estoque após entrega
+## ► Esperado: quantidade_disponivel = 8 (não volta para 10 — as 2 unidades foram consumidas)
+## ► Esperado: quantidade_reservada = 0 (baixou as 2 unidades reservadas na entrega)
+GET {{baseUrl}}/api/v1/itens-estoque/{{itemEstoqueId}} HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+### [ENT-05] Não permite entregar novamente
+## ► Esperado: HTTP 422 (OS já está ENTREGUE — transição inválida)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/entregar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
+
+###
+
+
+## ============================================================
+## NEGATIVO — SEM TOKEN
+## ============================================================
+
+### [NEG-01] Registrar pagamento sem token
+## ► Esperado: HTTP 401 ou 403
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServicoId}}/registrar-pagamento HTTP/1.1
+Content-Type: application/json
+
+{
+    "forma_pagamento": "PIX",
+    "valor_pago": "270.00"
+}
+
+###

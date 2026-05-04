@@ -28,11 +28,13 @@ from app.modules.ordens_servico.application.dtos.ordem_servico import (
     OrdemServicoServicoResponse,
     RecusarOrcamentoRequest,
     RegistrarDiagnosticoRequest,
+    RegistrarPagamentoOrdemServicoRequest,
     RegistrarTempoExecutadoServicoRequest,
 )
 from app.modules.ordens_servico.domain.entities.ordem_servico import StatusOrdemServico
 from app.modules.ordens_servico.domain.exceptions import (
     ClienteSemContatoParaOrcamentoError,
+    EstoqueReservadoInsuficienteError,
     ItemJaAdicionadoNaOrdemServicoError,
     ItemOrdemServicoStatusInvalidoError,
     OrcamentoJaExisteParaOrdemServicoError,
@@ -41,13 +43,19 @@ from app.modules.ordens_servico.domain.exceptions import (
     OrdemServicoInvalidaError,
     OrdemServicoItemNaoEncontradoError,
     OrdemServicoNaoEncontradaError,
+    OrdemServicoPagamentoJaRegistradoError,
+    OrdemServicoPagamentoNaoRegistradoError,
+    OrdemServicoPossuiItemAReceberError,
+    OrdemServicoPossuiItemPendenteError,
+    OrdemServicoPossuiItemReservadoError,
+    OrdemServicoPossuiServicoSemTempoExecutadoError,
     OrdemServicoServicoNaoEncontradoError,
     OrdemServicoTransicaoInvalidaError,
-    OrdemServicoPossuiItemAReceberError,
-    OrdemServicoPossuiServicoSemTempoExecutadoError,
     OrdemServicoServicoCanceladoError,
     ServicoJaAdicionadoNaOrdemServicoError,
     TempoExecutadoInvalidoError,
+    ValorPagamentoInvalidoError,
+    ValorPagamentoMenorQueOrcamentoError,
 )
 from app.modules.ordens_servico.domain.filters.ordem_servico import ListarOrdensServicoFiltro
 from app.modules.ordens_servico.presentation.dependencies import (
@@ -57,6 +65,7 @@ from app.modules.ordens_servico.presentation.dependencies import (
     ConcluirDiagnosticoDep,
     ConfirmarRecebimentoItemDep,
     CriarOrdemServicoDep,
+    EntregarOrdemServicoDep,
     GerarOrcamentoDep,
     IniciarDiagnosticoDep,
     IniciarExecucaoDep,
@@ -68,6 +77,7 @@ from app.modules.ordens_servico.presentation.dependencies import (
     ObterOrdemServicoPorIdDep,
     RecusarOrcamentoDep,
     RegistrarDiagnosticoDep,
+    RegistrarPagamentoDep,
     RegistrarTempoExecutadoDep,
     RemoverItemDep,
     RemoverServicoDep,
@@ -706,6 +716,81 @@ async def finalizar_ordem_servico(
     except OrdemServicoPossuiServicoSemTempoExecutadoError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except OrdemServicoTransicaoInvalidaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Registrar Pagamento da OS
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/registrar-pagamento",
+    summary="Registrar Pagamento da OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS não encontrada", "model": ErrorResponse},
+        409: {"description": "Pagamento já registrado", "model": ErrorResponse},
+        422: {"description": "Dados inválidos ou status inválido", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def registrar_pagamento(
+    ordem_servico_id: UUID,
+    dto: RegistrarPagamentoOrdemServicoRequest,
+    usecase: RegistrarPagamentoDep,
+) -> OrdemServicoDetalheResponse:
+    try:
+        return await usecase.execute(str(ordem_servico_id), dto)
+    except OrdemServicoNaoEncontradaError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OrdemServicoPagamentoJaRegistradoError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except (
+        OrdemServicoTransicaoInvalidaError,
+        ValorPagamentoInvalidoError,
+        ValorPagamentoMenorQueOrcamentoError,
+    ) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except InvalidIDError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Entregar OS
+# ---------------------------------------------------------------------------
+
+
+@router.patch(
+    "/{ordem_servico_id}/entregar",
+    summary="Entregar OS",
+    responses={
+        **_RESPONSES_AUTH,
+        404: {"description": "OS ou item de estoque não encontrado", "model": ErrorResponse},
+        422: {"description": "Status inválido, pagamento não registrado ou inconsistência de itens", "model": ErrorResponse},
+    },
+    dependencies=[_ADMIN_ATENDENTE],
+)
+async def entregar_ordem_servico(
+    ordem_servico_id: UUID,
+    usecase: EntregarOrdemServicoDep,
+) -> OrdemServicoDetalheResponse:
+    try:
+        return await usecase.execute(str(ordem_servico_id))
+    except OrdemServicoNaoEncontradaError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ItemEstoqueNaoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (
+        OrdemServicoTransicaoInvalidaError,
+        OrdemServicoPagamentoNaoRegistradoError,
+        OrdemServicoPossuiItemPendenteError,
+        OrdemServicoPossuiItemReservadoError,
+        EstoqueReservadoInsuficienteError,
+        ItemOrdemServicoStatusInvalidoError,
+    ) as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except InvalidIDError as exc:
         raise HTTPException(status_code=422, detail=str(exc))

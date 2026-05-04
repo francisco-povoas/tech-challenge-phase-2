@@ -44,6 +44,10 @@ class OrdemServicoRepo:
             atualizado_em=os.atualizado_em,
             iniciado_diagnostico_em=os.iniciado_diagnostico_em,
             diagnostico_concluido_em=os.diagnostico_concluido_em,
+            pagamento_registrado_em=os.pagamento_registrado_em,
+            forma_pagamento=os.forma_pagamento,
+            valor_pago=os.valor_pago,
+            pagamento_observacao=os.pagamento_observacao,
         )
         self.session.add(model)
 
@@ -63,6 +67,10 @@ class OrdemServicoRepo:
         model.atualizado_em = os.atualizado_em
         model.iniciado_diagnostico_em = os.iniciado_diagnostico_em
         model.diagnostico_concluido_em = os.diagnostico_concluido_em
+        model.pagamento_registrado_em = os.pagamento_registrado_em
+        model.forma_pagamento = os.forma_pagamento
+        model.valor_pago = os.valor_pago
+        model.pagamento_observacao = os.pagamento_observacao
         self.session.add(model)
         return os
 
@@ -212,6 +220,10 @@ class OrdemServicoRepo:
             atualizado_em=model.atualizado_em,
             iniciado_diagnostico_em=model.iniciado_diagnostico_em,
             diagnostico_concluido_em=model.diagnostico_concluido_em,
+            pagamento_registrado_em=model.pagamento_registrado_em,
+            forma_pagamento=model.forma_pagamento,
+            valor_pago=Decimal(str(model.valor_pago)) if model.valor_pago is not None else None,
+            pagamento_observacao=model.pagamento_observacao,
         )
 
     @staticmethod

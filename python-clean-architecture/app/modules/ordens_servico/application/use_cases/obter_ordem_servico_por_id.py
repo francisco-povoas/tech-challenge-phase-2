@@ -53,6 +53,10 @@ def _to_detalhe(
         atualizado_em=os.atualizado_em,
         iniciado_diagnostico_em=os.iniciado_diagnostico_em,
         diagnostico_concluido_em=os.diagnostico_concluido_em,
+        pagamento_registrado_em=os.pagamento_registrado_em,
+        forma_pagamento=os.forma_pagamento,
+        valor_pago=os.valor_pago,
+        pagamento_observacao=os.pagamento_observacao,
         servicos=[_servico_to_response(s) for s in servicos],
         itens=[_item_to_response(i) for i in itens],
     )

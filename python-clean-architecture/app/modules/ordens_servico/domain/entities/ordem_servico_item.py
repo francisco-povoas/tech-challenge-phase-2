@@ -94,3 +94,27 @@ class OrdemServicoItem:
             valor_unitario=self.valor_unitario,
             status=StatusItemNaOS.EM_USO,
         )
+
+    def consumir(self) -> "OrdemServicoItem":
+        """Consome o item (EM_USO -> CONSUMIDO) ao entregar a OS.
+
+        Retorna nova instância com status CONSUMIDO.
+        Lança ItemOrdemServicoStatusInvalidoError se o item não estiver EM_USO.
+        """
+        from app.modules.ordens_servico.domain.exceptions import ItemOrdemServicoStatusInvalidoError
+
+        if self.status != StatusItemNaOS.EM_USO:
+            raise ItemOrdemServicoStatusInvalidoError(
+                f"Só é possível consumir item com status 'EM_USO'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        return OrdemServicoItem(
+            id=self.id,
+            ordem_servico_id=self.ordem_servico_id,
+            item_estoque_id=self.item_estoque_id,
+            nome_item=self.nome_item,
+            tipo_item=self.tipo_item,
+            quantidade=self.quantidade,
+            valor_unitario=self.valor_unitario,
+            status=StatusItemNaOS.CONSUMIDO,
+        )

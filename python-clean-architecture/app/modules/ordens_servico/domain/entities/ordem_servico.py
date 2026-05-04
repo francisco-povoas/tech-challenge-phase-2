@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Optional
 from uuid import UUID
@@ -12,6 +13,10 @@ from app.modules.ordens_servico.domain.exceptions import (
     OrdemServicoTransicaoInvalidaError,
     OrdemServicoPossuiItemAReceberError,
     OrdemServicoPossuiServicoSemTempoExecutadoError,
+    OrdemServicoPagamentoJaRegistradoError,
+    OrdemServicoPagamentoNaoRegistradoError,
+    ValorPagamentoInvalidoError,
+    ValorPagamentoMenorQueOrcamentoError,
 )
 
 
@@ -80,6 +85,12 @@ class OrdemServico:
     atualizado_em: datetime
     iniciado_diagnostico_em: Optional[datetime]
     diagnostico_concluido_em: Optional[datetime]
+
+    # Campos de pagamento — preenchidos ao registrar pagamento
+    pagamento_registrado_em: Optional[datetime] = None
+    forma_pagamento: Optional[str] = None
+    valor_pago: Optional[Decimal] = None
+    pagamento_observacao: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.queixa_inicial or not self.queixa_inicial.strip():
@@ -163,4 +174,89 @@ class OrdemServico:
             atualizado_em=datetime.now(UTC),
             iniciado_diagnostico_em=self.iniciado_diagnostico_em,
             diagnostico_concluido_em=self.diagnostico_concluido_em,
+        )
+
+    def registrar_pagamento(
+        self,
+        forma_pagamento: str,
+        valor_pago: Decimal,
+        observacao: Optional[str] = None,
+        total_orcamento: Optional[Decimal] = None,
+    ) -> "OrdemServico":
+        """Registra pagamento da OS (OS permanece FINALIZADA).
+
+        Lança OrdemServicoTransicaoInvalidaError se OS não estiver FINALIZADA.
+        Lança OrdemServicoPagamentoJaRegistradoError se pagamento já foi registrado.
+        Lança ValorPagamentoInvalidoError se valor_pago <= 0.
+        Lança ValorPagamentoMenorQueOrcamentoError se valor_pago < total_orcamento.
+        """
+        from datetime import UTC, datetime
+
+        if self.status != StatusOrdemServico.FINALIZADA:
+            raise OrdemServicoTransicaoInvalidaError(
+                f"Só é possível registrar pagamento de OS com status 'FINALIZADA'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        if self.pagamento_registrado_em is not None:
+            raise OrdemServicoPagamentoJaRegistradoError(
+                "Pagamento já registrado para esta ordem de serviço."
+            )
+        if valor_pago <= Decimal("0"):
+            raise ValorPagamentoInvalidoError(
+                "Valor pago deve ser maior que zero."
+            )
+        if total_orcamento is not None and valor_pago < total_orcamento:
+            raise ValorPagamentoMenorQueOrcamentoError(
+                "Valor pago não pode ser menor que o total do orçamento aprovado."
+            )
+        agora = datetime.now(UTC)
+        return OrdemServico(
+            id=self.id,
+            cliente_id=self.cliente_id,
+            veiculo_id=self.veiculo_id,
+            status=self.status,  # permanece FINALIZADA
+            queixa_inicial=self.queixa_inicial,
+            diagnostico=self.diagnostico,
+            criado_em=self.criado_em,
+            atualizado_em=agora,
+            iniciado_diagnostico_em=self.iniciado_diagnostico_em,
+            diagnostico_concluido_em=self.diagnostico_concluido_em,
+            pagamento_registrado_em=agora,
+            forma_pagamento=forma_pagamento,
+            valor_pago=valor_pago,
+            pagamento_observacao=observacao,
+        )
+
+    def entregar(self) -> "OrdemServico":
+        """Entrega a OS (FINALIZADA -> ENTREGUE).
+
+        Lança OrdemServicoTransicaoInvalidaError se OS não estiver FINALIZADA.
+        Lança OrdemServicoPagamentoNaoRegistradoError se pagamento não foi registrado.
+        """
+        from datetime import UTC, datetime
+
+        if self.status != StatusOrdemServico.FINALIZADA:
+            raise OrdemServicoTransicaoInvalidaError(
+                f"Só é possível entregar OS com status 'FINALIZADA'. "
+                f"Status atual: '{self.status.value}'."
+            )
+        if self.pagamento_registrado_em is None:
+            raise OrdemServicoPagamentoNaoRegistradoError(
+                "Não é possível entregar OS sem pagamento registrado."
+            )
+        return OrdemServico(
+            id=self.id,
+            cliente_id=self.cliente_id,
+            veiculo_id=self.veiculo_id,
+            status=StatusOrdemServico.ENTREGUE,
+            queixa_inicial=self.queixa_inicial,
+            diagnostico=self.diagnostico,
+            criado_em=self.criado_em,
+            atualizado_em=datetime.now(UTC),
+            iniciado_diagnostico_em=self.iniciado_diagnostico_em,
+            diagnostico_concluido_em=self.diagnostico_concluido_em,
+            pagamento_registrado_em=self.pagamento_registrado_em,
+            forma_pagamento=self.forma_pagamento,
+            valor_pago=self.valor_pago,
+            pagamento_observacao=self.pagamento_observacao,
         )

@@ -1,0 +1,901 @@
+Dicionário de Linguagem Ubíqua
+
+Sumário
+
+1 - Atores do domínio
+2 - Elementos de suporte ao domínio
+3 - Objetos principais do domínio
+4 - Estados da Ordem de Serviço
+5 - Saldos do ItemEstoque
+6 - Estados do Item da OS
+7 - Orçamento
+8 - Execução da OS
+9 - Pagamento e entrega
+10 - Métricas de execução
+11 - Distinções semânticas importantes
+12 - Regras de negócio principais
+
+1 - Atores do domínio
+
+Cliente
+
+Pessoa física ou jurídica responsável pelo veículo atendido pela oficina.
+
+O cliente é responsável por:
+
+- relatar a queixa inicial;
+- aprovar ou negar o orçamento;
+- realizar o pagamento;
+- retirar ou receber o veículo após a conclusão do serviço.
+
+No MVP, a aprovação ou recusa do orçamento não é realizada diretamente pelo cliente via aplicativo. O atendente registra no sistema a decisão informada pelo cliente.
+
+Atendente
+
+Profissional da oficina responsável pelas atividades administrativas e de atendimento ao cliente.
+
+O atendente é responsável por:
+
+- cadastrar ou identificar cliente;
+- cadastrar ou identificar veículo;
+- abrir Ordem de Serviço;
+- gerar orçamento;
+- registrar aprovação ou recusa do orçamento;
+- registrar recebimento de item pendente;
+- registrar pagamento;
+- entregar a OS;
+- consultar métricas administrativas.
+
+O atendente não executa ações técnicas da OS, como diagnóstico, inclusão de serviços durante diagnóstico, execução ou finalização técnica.
+
+
+Mecânico
+
+Profissional responsável pelas atividades técnicas da Ordem de Serviço.
+
+O mecânico é responsável por:
+
+- iniciar diagnóstico;
+- registrar diagnóstico;
+- adicionar serviços necessários à OS;
+- adicionar peças e insumos necessários à OS;
+- concluir diagnóstico;
+- iniciar execução;
+- registrar tempo executado dos serviços;
+- finalizar a OS.
+
+O mecânico não registra pagamento, não entrega OS e não consulta métricas administrativas no MVP.
+
+Administrador
+
+Usuário com permissão administrativa ampla no sistema.
+
+O administrador pode executar ações administrativas, como:
+
+- criar usuários;
+- gerenciar cadastros;
+- registrar pagamento;
+- entregar OS;
+- consultar métricas.
+
+No fluxo operacional demonstrável, evita-se usar o administrador para ações técnicas da OS por conveniência. As ações técnicas pertencem ao mecânico.
+
+
+Fornecedor externo
+
+Agente externo responsável por entregar peças ou insumos solicitados pela oficina quando esses itens não estão disponíveis em estoque.
+
+O fornecedor externo não interage diretamente com o sistema no MVP. O recebimento do item é registrado pelo atendente.
+
+
+2 - Elementos de suporte ao domínio
+Sistema
+
+Software utilizado pela oficina para registrar e controlar clientes, veículos, ordens de serviço, orçamentos, estoque, execução, pagamentos, entregas e métricas.
+
+O sistema não é um ator do domínio. Ele funciona como meio de registro das ações dos atores humanos e como executor de regras e políticas de negócio.
+
+Estoque de peças e insumos
+
+- quantidade disponível;
+- quantidade reservada;
+- quantidade mínima;
+- valor unitário.
+
+
+
+Estrutura controlada pelo sistema para manter o cadastro e os saldos gerais de peças e insumos da oficina.
+
+O estoque controla:
+
+- quantidade disponível;
+- quantidade reservada;
+- quantidade mínima;
+- valor unitário.
+
+O estoque não controla estados operacionais como A_RECEBER, RESERVADO, EM_USO, CONSUMIDO ou CANCELADO.
+
+Esses estados pertencem ao Item da OS, pois representam a situação daquele item dentro de uma Ordem de Serviço específica.
+
+Catálogo de serviços
+
+Conjunto de serviços oferecidos pela oficina.
+
+Cada serviço do catálogo possui informações como:
+
+- nome;
+- descrição;
+- valor base;
+- tempo estimado.
+
+O serviço do catálogo não representa uma execução. Ele representa o tipo de serviço que pode ser adicionado a uma Ordem de Serviço.
+
+
+Notificação mockada
+
+Representação simulada do envio de orçamento ao cliente por e-mail e WhatsApp.
+
+No MVP, o sistema registra a comunicação do orçamento, mas não realiza envio real por provedores externos.
+
+
+3 - Objetos principais do domínio
+Ordem de Serviço
+
+Registro central do atendimento realizado pela oficina para um veículo.
+
+A OS concentra:
+- cliente;
+- veículo;
+- queixa inicial;
+- diagnóstico;
+- serviços solicitados ou identificados;
+- itens necessários;
+- orçamento;
+- aprovação ou recusa;
+- execução;
+- tempos executados;
+- pagamento;
+- entrega.
+
+A OS é o principal agregado do fluxo operacional.
+
+Queixa inicial
+
+Descrição do problema relatado pelo cliente no momento da abertura da OS.
+
+Representa a motivação inicial do atendimento.
+
+Exemplo:
+"Veículo fazendo barulho ao frear."
+
+Diagnóstico da OS
+
+Resultado da análise técnica realizada pelo mecânico.
+
+Durante o diagnóstico, o mecânico identifica:
+
+- serviços necessários;
+- peças e insumos necessários;
+- observações técnicas.
+
+O diagnóstico permite que o orçamento seja gerado com base nos serviços e itens adicionados à OS.
+
+Serviço do catálogo
+
+Tipo de serviço oferecido pela oficina.
+
+Exemplo:
+Troca de óleo
+Alinhamento
+Balanceamento
+Substituição de pastilha de freio
+
+O serviço do catálogo possui um tempo estimado, que serve como referência para planejamento e comparação com o tempo real executado.
+
+
+Serviço da OS
+
+Vínculo entre uma Ordem de Serviço e um serviço do catálogo.
+
+Representa que aquele serviço será ou foi executado em uma OS específica.
+
+O Serviço da OS pode conter:
+
+- serviço do catálogo;
+- valor aplicado;
+- observações;
+- tempo executado em minutos;
+- indicação de cancelamento.
+
+ItemEstoque
+
+Peça ou insumo controlado pela oficina.
+
+Representa o cadastro e o saldo geral do item, independentemente de uma Ordem de Serviço específica.
+
+Exemplo:
+
+ItemEstoque:
+Nome: Óleo 5W30
+Tipo: INSUMO
+Quantidade disponível: 20
+Quantidade reservada: 0
+Quantidade mínima: 5
+Valor unitário: R$ 45,00
+
+O ItemEstoque não possui estados operacionais como A_RECEBER, RESERVADO, EM_USO ou CONSUMIDO.
+
+Esses estados pertencem ao Item da OS.
+
+Item da OS
+
+Vínculo entre uma Ordem de Serviço e um ItemEstoque.
+
+Representa a quantidade daquele item necessária ou utilizada em uma OS específica.
+
+Exemplo:
+
+Item da OS:
+OS: #001
+ItemEstoque: Óleo 5W30
+Quantidade: 2
+Status: RESERVADO
+
+O Item da OS possui status próprio:
+
+A_RECEBER
+RESERVADO
+EM_USO
+CONSUMIDO
+CANCELADO
+
+Orçamento
+
+Registro vinculado à OS contendo os serviços, peças, insumos e valores necessários para execução do atendimento.
+
+O orçamento é gerado com base nos serviços e itens adicionados à OS durante o diagnóstico.
+
+Após gerado, o orçamento é comunicado ao cliente por canais mockados, como e-mail e WhatsApp.
+
+
+Comunicação do orçamento
+
+Registro de que o orçamento foi comunicado ao cliente.
+
+No MVP, a comunicação é mockada. O sistema registra a tentativa ou evidência de comunicação, mas não realiza envio real.
+
+
+Pagamento
+
+Registro da quitação do valor devido pelo cliente após a finalização da OS e antes da entrega do veículo.
+
+No MVP, o pagamento é um registro interno simples na própria Ordem de Serviço.
+
+Campos principais:
+- pagamento_registrado_em;
+- forma_pagamento;
+- valor_pago;
+- pagamento_observacao.
+
+
+Entrega da OS
+
+Ato administrativo de liberar ou registrar a retirada do veículo após a OS estar finalizada e paga.
+
+Na entrega:
+
+- OS passa para ENTREGUE;
+- itens EM_USO passam para CONSUMIDO;
+- quantidade reservada do estoque é baixada;
+- quantidade disponível do estoque não muda.
+
+4 - Estados da Ordem de Serviço
+OS RECEBIDA
+
+Estado da OS após sua criação e registro da queixa inicial do cliente.
+
+Indica que a OS foi aberta e aguarda o início do diagnóstico.
+
+OS EM_DIAGNOSTICO
+
+Estado da OS durante a análise técnica realizada pelo mecânico.
+
+Nesse estado, o mecânico pode:
+- registrar diagnóstico;
+- adicionar serviços;
+- adicionar itens;
+- cancelar serviços ou itens adicionados, quando permitido.
+
+OS DIAGNOSTICO_CONCLUIDO
+
+Estado da OS após o encerramento do diagnóstico técnico.
+
+Indica que a análise foi finalizada e a OS está pronta para geração do orçamento.
+
+OS AGUARDANDO_APROVACAO
+
+Estado da OS após a geração e comunicação do orçamento.
+
+Indica que a oficina aguarda a decisão do cliente sobre o orçamento.
+
+OS AGUARDANDO_ITENS
+
+Estado da OS após aprovação do orçamento quando existe pelo menos um Item da OS ativo com status A_RECEBER.
+
+Enquanto houver item ativo A_RECEBER, a OS não pode iniciar execução.
+
+Quando todos os itens pendentes forem recebidos e reservados, a OS passa para APROVADA.
+
+OS APROVADA
+
+Estado da OS após aprovação do orçamento pelo cliente e quando todos os itens necessários estão reservados ou não há itens pendentes.
+
+Uma OS aprovada está apta a iniciar execução.
+
+OS EM_EXECUCAO
+
+Estado da OS no qual os serviços estão sendo efetivamente realizados pelo mecânico.
+
+Ao iniciar execução:
+- OS APROVADA passa para EM_EXECUCAO;
+- itens RESERVADO passam para EM_USO;
+- estoque não muda.
+
+OS FINALIZADA
+
+Estado da OS após a conclusão técnica dos serviços pelo mecânico.
+
+Indica que a execução terminou, mas a OS ainda aguarda pagamento e entrega.
+
+A OS FINALIZADA ainda não representa encerramento completo do atendimento.
+
+OS ENTREGUE
+
+Estado da OS após o pagamento e a liberação ou retirada do veículo.
+
+Representa a conclusão bem-sucedida do atendimento.
+
+Ao entregar:
+- OS FINALIZADA passa para ENTREGUE;
+- itens EM_USO passam para CONSUMIDO;
+- quantidade reservada do estoque é reduzida;
+- quantidade disponível não muda.
+
+OS ENCERRADA
+
+Estado da OS quando o cliente recusa o orçamento e os serviços não são executados.
+
+Representa o término do fluxo sem continuidade operacional.
+
+Na recusa do orçamento:
+
+- OS passa para ENCERRADA;
+- itens RESERVADO ou A_RECEBER são cancelados;
+- reservas de estoque são liberadas quando aplicável.
+
+
+5 - Saldos do ItemEstoque
+Quantidade disponível
+
+Quantidade livre do item que pode ser reservada para novas Ordens de Serviço.
+
+Um item está disponível para novas OS quando:
+
+quantidade_disponivel > 0
+
+Ao reservar item para uma OS:
+
+quantidade_disponivel diminui
+quantidade_reservada aumenta
+
+
+Quantidade reservada
+
+Quantidade do item que já foi separada para uma ou mais Ordens de Serviço, mas ainda não foi definitivamente consumida.
+
+Ao reservar:
+
+quantidade_reservada aumenta
+
+Ao entregar a OS e consumir o item:
+
+quantidade_reservada diminui
+
+
+A quantidade disponível não aumenta na entrega, porque ela já foi reduzida no momento da reserva.
+
+Quantidade mínima
+
+Quantidade de referência usada pela oficina para identificar estoque baixo.
+
+No MVP, esse campo compõe o cadastro do item e pode apoiar futuras regras de alerta ou reposição.
+
+Valor unitário
+
+Valor de referência de uma unidade do item.
+
+É usado no cálculo do orçamento da OS quando o item é adicionado.
+
+
+6 - Estados do Item da OS
+Item da OS A_RECEBER
+
+Estado do item quando a OS precisa de uma peça ou insumo, mas não havia quantidade disponível suficiente no estoque no momento da inclusão.
+
+Nesse caso:
+- o item da OS fica A_RECEBER;
+- o estoque não é alterado;
+- não há reserva parcial no MVP.
+
+Exemplo:
+
+Quantidade solicitada: 3
+Quantidade disponível: 1
+
+Resultado:
+Item da OS: A_RECEBER
+Estoque: não muda
+
+Item da OS RESERVADO
+
+Estado do item quando a quantidade necessária foi separada para uso exclusivo naquela OS.
+
+Ao reservar item com saldo disponível:
+
+quantidade_disponivel -= quantidade_solicitada
+quantidade_reservada += quantidade_solicitada
+
+Exemplo:
+
+Antes:
+disponível = 20
+reservado = 0
+
+OS solicita:
+2 unidades
+
+Depois:
+disponível = 18
+reservado = 2
+
+Item da OS:
+RESERVADO
+
+
+Item da OS EM_USO
+
+Estado do item quando a execução da OS foi iniciada e o item reservado passou a ser usado pelo mecânico.
+
+Ao iniciar execução:
+
+Item da OS RESERVADO -> EM_USO
+
+Essa transição não altera o estoque, porque o item já havia sido reservado anteriormente.
+
+Item da OS CONSUMIDO
+
+Estado do item após a entrega da OS, quando o item foi definitivamente consumido.
+
+Ao consumir item na entrega:
+
+Item da OS EM_USO -> CONSUMIDO
+quantidade_reservada -= quantidade_consumida
+quantidade_disponivel não muda
+
+Item da OS CANCELADO
+
+Estado do item quando ele deixa de ser necessário para a OS.
+
+Se o item estava RESERVADO, a reserva deve ser liberada:
+
+quantidade_disponivel += quantidade_item
+quantidade_reservada -= quantidade_item
+
+Se o item estava A_RECEBER, não há alteração no estoque.
+
+Itens cancelados não bloqueiam execução, finalização ou entrega.
+
+7 - Orçamento
+Orçamento gerado
+
+Estado ou momento em que o sistema calcula os valores da OS com base nos serviços e itens adicionados durante o diagnóstico.
+
+O orçamento considera:
+
+- valor dos serviços da OS;
+- valor dos itens da OS;
+- quantidades de itens;
+- total geral.
+
+Orçamento comunicado
+
+Orçamento enviado ou registrado como comunicado ao cliente.
+
+No MVP, a comunicação por e-mail e WhatsApp é mockada.
+
+Orçamento aprovado
+
+Decisão positiva do cliente sobre a execução dos serviços.
+
+No MVP, essa decisão é registrada pelo atendente.
+
+Se todos os itens ativos estiverem RESERVADO, a OS passa para APROVADA.
+
+Se existir item ativo A_RECEBER, a OS passa para AGUARDANDO_ITENS.
+
+Orçamento recusado
+
+Decisão negativa do cliente sobre a execução dos serviços.
+
+No MVP, essa decisão é registrada pelo atendente.
+
+Ao recusar:
+
+- OS passa para ENCERRADA;
+- itens ativos são cancelados;
+- reservas de estoque são liberadas.
+
+8 - Execução da OS
+Início da execução
+
+Ação técnica realizada pelo mecânico quando a OS está aprovada.
+
+Pré-condições:
+
+- OS deve estar APROVADA;
+- não pode existir item ativo A_RECEBER.
+
+Efeitos:
+
+- OS passa para EM_EXECUCAO;
+- itens RESERVADO passam para EM_USO;
+- estoque não muda.
+
+Tempo executado do serviço
+
+Tempo real registrado pelo mecânico para um Serviço da OS durante a execução.
+
+É informado em minutos.
+
+Exemplo:
+
+tempo_executado_minutos = 75
+Esse valor é usado para métricas de execução.
+
+No MVP, o tempo executado pode ser sobrescrito enquanto a OS estiver EM_EXECUCAO.
+
+Finalização da OS
+
+Ação técnica realizada pelo mecânico após concluir os serviços.
+
+Pré-condições:
+- OS deve estar EM_EXECUCAO;
+- todos os serviços ativos devem possuir tempo_executado_minutos preenchido.
+
+Efeitos:
+
+- OS passa para FINALIZADA;
+- itens permanecem EM_USO;
+- estoque não muda.
+
+Finalizar a OS não representa entrega ao cliente.
+
+9 - Pagamento e entrega
+Forma de pagamento
+
+Meio utilizado pelo cliente para quitar o valor da OS.
+
+Formas previstas no MVP:
+
+DINHEIRO
+PIX
+CARTAO_CREDITO
+CARTAO_DEBITO
+BOLETO
+TRANSFERENCIA
+
+Valor pago
+
+Valor registrado como pago pelo cliente.
+
+Regras:
+
+- deve ser maior que zero;
+- não pode ser menor que o total do orçamento aprovado, quando essa validação estiver disponível;
+- pagamento não pode ser registrado duas vezes.
+
+Pagamento registrado
+
+Estado administrativo da OS indicando que o pagamento foi registrado.
+
+Registrar pagamento:
+
+- preenche pagamento_registrado_em;
+- preenche forma_pagamento;
+- preenche valor_pago;
+- preenche pagamento_observacao quando informada;
+- não muda o status da OS;
+- não altera itens;
+- não altera estoque.
+
+A OS permanece FINALIZADA após o pagamento.
+
+Entrega da OS
+
+Ação administrativa realizada após a OS estar finalizada e paga.
+
+Pré-condições:
+
+- OS deve estar FINALIZADA;
+- pagamento deve estar registrado.
+
+Efeitos:
+
+
+- OS passa para ENTREGUE;
+- itens EM_USO passam para CONSUMIDO;
+- quantidade_reservada do ItemEstoque diminui;
+- quantidade_disponivel não muda.
+
+
+10 - Métricas de execução
+Tempo estimado do serviço
+
+Tempo previsto no catálogo de serviços.
+
+Representa uma estimativa da oficina para planejamento.
+
+No endpoint de métricas, esse valor aparece como:
+
+tempo_estimado_minutos
+
+Mesmo que internamente o cadastro do serviço use outro nome, como tempo_medio_minutos, na métrica ele representa o tempo estimado do catálogo.
+
+Tempo executado do serviço
+
+Tempo real registrado pelo mecânico durante a execução de uma OS.
+
+É usado para calcular:
+
+- tempo médio real;
+- menor tempo;
+- maior tempo;
+- quantidade de OS em que o serviço foi executado.
+
+Estatística de tempo de execução do serviço
+
+Consulta administrativa que retorna métricas de um serviço específico do catálogo.
+
+Considera apenas:
+
+- OS FINALIZADA;
+- OS ENTREGUE;
+- serviços não cancelados;
+- serviços com tempo_executado_minutos preenchido;
+- serviço do catálogo informado.
+
+Ignora:
+
+- OS não finalizadas;
+- OS ENCERRADA;
+- serviços cancelados;
+- serviços sem tempo;
+- outros serviços.
+
+Exemplo de retorno:
+
+{
+  "servico_id": "uuid",
+  "nome_servico": "Troca de óleo",
+  "tempo_estimado_minutos": 60,
+  "quantidade_ordens_servico": 2,
+  "tempo_medio_minutos": 67.5,
+  "menor_tempo_minutos": 60,
+  "maior_tempo_minutos": 75
+}
+
+Execuções de um serviço
+
+Lista de execuções concluídas de um serviço específico do catálogo.
+
+Cada execução representa o serviço dentro de uma OS finalizada ou entregue.
+
+Campos principais:
+
+- ordem_servico_id;
+- ordem_servico_servico_id;
+- tempo_executado_minutos;
+- status_os.
+
+11 - Distinções semânticas importantes
+ItemEstoque não é Item da OS
+
+ItemEstoque representa o cadastro e saldo geral de uma peça ou insumo.
+
+Item da OS representa a necessidade ou utilização daquele item dentro de uma Ordem de Serviço específica.
+
+Saldo de estoque não é status do item da OS
+
+O estoque controla saldos:
+
+quantidade_disponivel
+quantidade_reservada
+
+O Item da OS controla status:
+
+A_RECEBER
+RESERVADO
+EM_USO
+CONSUMIDO
+CANCELADO
+
+OS FINALIZADA não é OS ENTREGUE
+
+OS FINALIZADA significa que os serviços foram concluídos pelo mecânico.
+
+OS ENTREGUE significa que, além dos serviços concluídos, o pagamento foi registrado e o veículo foi liberado ou retirado.
+
+
+OS ENCERRADA não é OS FINALIZADA
+
+OS ENCERRADA representa uma OS encerrada por recusa do orçamento.
+
+OS FINALIZADA representa uma OS cuja execução ocorreu e foi concluída tecnicamente.
+
+
+OS AGUARDANDO_APROVACAO não é OS AGUARDANDO_ITENS
+
+OS AGUARDANDO_APROVACAO depende da decisão do cliente sobre o orçamento.
+
+OS AGUARDANDO_ITENS depende do recebimento de itens solicitados ao fornecedor, após a aprovação do orçamento.
+
+Item da OS RESERVADO não é Item da OS EM_USO
+
+Item da OS RESERVADO está separado para a OS, mas ainda não está sendo usado.
+
+Item da OS EM_USO está sendo utilizado durante a execução.
+
+Item da OS EM_USO não é Item da OS CONSUMIDO
+
+Item da OS EM_USO está em processo de aplicação ou uso.
+
+Item da OS CONSUMIDO já foi definitivamente utilizado e teve sua reserva baixada na entrega da OS.
+
+Pagamento registrado não é entrega
+
+Registrar pagamento apenas registra a quitação financeira.
+
+A OS permanece FINALIZADA.
+
+A entrega é uma ação posterior que muda a OS para ENTREGUE.
+
+Tempo estimado não é tempo executado
+
+Tempo estimado é o tempo previsto no catálogo de serviços.
+
+Tempo executado é o tempo real registrado pelo mecânico durante a execução da OS.
+
+12 - Regras de negócio principais
+Regra de inclusão de item na OS durante diagnóstico
+
+Ao adicionar item na OS durante diagnóstico:
+
+Se houver saldo suficiente:
+    Item da OS fica RESERVADO
+    quantidade_disponivel diminui
+    quantidade_reservada aumenta
+
+Se não houver saldo suficiente:
+    Item da OS fica A_RECEBER
+    estoque não muda
+    
+No MVP:
+
+não há reserva parcial
+
+Regra de recebimento de item A_RECEBER
+
+Quando um item pendente chega à oficina:
+
+- atendente confirma recebimento;
+- Item da OS A_RECEBER passa para RESERVADO;
+- quantidade_reservada do ItemEstoque aumenta;
+- quantidade_disponivel não muda.
+
+O item recebido entra diretamente como reservado porque foi adquirido para uma OS específica.
+
+
+ Regra de aprovação do orçamento
+
+Ao aprovar orçamento:
+
+Se todos os itens ativos estão RESERVADO:
+    OS passa para APROVADA
+
+Se existe item ativo A_RECEBER:
+    OS passa para AGUARDANDO_ITENS
+    
+Regra de recusa do orçamento
+
+Ao recusar orçamento:
+
+- OS passa para ENCERRADA;
+- itens ativos são cancelados;
+- reservas de estoque são liberadas quando aplicável.
+
+
+Regra de início da execução
+
+Ao iniciar execução:
+
+- OS deve estar APROVADA;
+- não pode existir item ativo A_RECEBER;
+- OS passa para EM_EXECUCAO;
+- itens RESERVADO passam para EM_USO;
+- estoque não muda.
+
+Regra de registro de tempo executado
+
+Durante a execução:
+
+- OS deve estar EM_EXECUCAO;
+- serviço deve pertencer à OS;
+- serviço não pode estar cancelado;
+- tempo_executado_minutos deve ser maior que zero.
+
+No MVP, o tempo pode ser sobrescrito enquanto a OS está EM_EXECUCAO.
+
+Regra de finalização da OS
+
+Ao finalizar:
+
+- OS deve estar EM_EXECUCAO;
+- todos os serviços ativos devem possuir tempo executado;
+- OS passa para FINALIZADA;
+- itens permanecem EM_USO;
+- estoque não muda.
+
+Regra de pagamento
+
+Ao registrar pagamento:
+
+- OS deve estar FINALIZADA;
+- pagamento ainda não pode estar registrado;
+- valor pago deve ser maior que zero;
+- valor pago não pode ser menor que o total do orçamento aprovado;
+- OS permanece FINALIZADA;
+- estoque não muda.
+
+Regra de entrega
+
+Ao entregar:
+
+- OS deve estar FINALIZADA;
+- pagamento deve estar registrado;
+- OS passa para ENTREGUE;
+- itens EM_USO passam para CONSUMIDO;
+- quantidade_reservada diminui;
+- quantidade_disponivel não muda.
+
+Regra de métricas
+
+As métricas de tempo de execução consideram apenas:
+- OS FINALIZADA;
+- OS ENTREGUE;
+- serviços ativos;
+- serviços com tempo_executado_minutos preenchido.
+
+Não entram na métrica:
+
+- OS em execução;
+- OS encerrada;
+- OS aguardando aprovação;
+- OS aguardando itens;
+- serviços cancelados;
+- serviços sem tempo registrado.
+
+
+
+
+
+

@@ -20,13 +20,13 @@ from app.modules.estoque.application.use_cases import (
 
 # --- Infraestrutura ---
 
-async def get_item_estoque_repo(
+def get_item_estoque_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ItemEstoqueRepoProtocol:
     return ItemEstoqueRepo(session)
 
 
-async def get_item_estoque_uow(
+def get_item_estoque_uow(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ItemEstoqueUoWProtocol:
     return item_estoque_uow_factory(session)  # type: ignore[misc]

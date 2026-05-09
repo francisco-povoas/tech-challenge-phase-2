@@ -22,13 +22,13 @@ from app.modules.clientes.application.use_cases import (
 
 # --- Infraestrutura ---
 
-async def get_cliente_repo(
+def get_cliente_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ClienteRepoProtocol:
     return ClienteRepo(session)
 
 
-async def get_cliente_uow(
+def get_cliente_uow(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ClienteUoWProtocol:
     return cliente_uow_factory(session)  # type: ignore[misc]

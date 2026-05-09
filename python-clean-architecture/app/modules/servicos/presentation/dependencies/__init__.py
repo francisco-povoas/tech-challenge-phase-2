@@ -21,13 +21,13 @@ from app.modules.servicos.application.use_cases import (
 
 # --- Infraestrutura ---
 
-async def get_servico_repo(
+def get_servico_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ServicoRepoProtocol:
     return ServicoRepo(session)
 
 
-async def get_servico_uow(
+def get_servico_uow(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ServicoUoWProtocol:
     return servico_uow_factory(session)  # type: ignore[misc]

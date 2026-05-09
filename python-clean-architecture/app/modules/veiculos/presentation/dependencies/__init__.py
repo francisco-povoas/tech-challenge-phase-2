@@ -21,19 +21,19 @@ from app.modules.veiculos.application.use_cases import (
 
 # --- Infraestrutura ---
 
-async def get_veiculo_repo(
+def get_veiculo_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> VeiculoRepoProtocol:
     return VeiculoRepo(session)
 
 
-async def get_veiculo_uow(
+def get_veiculo_uow(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> VeiculoUoWProtocol:
     return veiculo_uow_factory(session)  # type: ignore[misc]
 
 
-async def get_cliente_repo_for_veiculo(
+def get_cliente_repo_for_veiculo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ClienteRepoImpl:
     return ClienteRepoImpl(session)

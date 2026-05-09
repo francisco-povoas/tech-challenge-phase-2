@@ -55,7 +55,7 @@ async def get_db_session() -> AsyncGenerator[DBSession, None]:
     This is the primary injection point for all modules.
     
     Usage in dependencies:
-        async def get_usuario_repo(
+        def get_usuario_repo(
             session: Annotated[DBSession, Depends(get_db_session)]
         ) -> UsuarioRepo:
             return UsuarioRepo(session)

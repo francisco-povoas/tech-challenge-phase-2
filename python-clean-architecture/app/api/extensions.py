@@ -30,7 +30,7 @@ def _to_json_safe(value: Any) -> Any:
         return str(value)
 
 
-async def validation_exception_handler(
+def validation_exception_handler(
     _: Request, exc: RequestValidationError
 ) -> JSONResponse:
     errors = []
@@ -41,7 +41,7 @@ async def validation_exception_handler(
 
 
 # Assegura que erros nao tratados sejam convertidos em respostas JSON genéricas, sem vazar detalhes do erro ou dados de entrada.
-async def unhandled_exception_handler(request: Request, exc: Exception):
+def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "Erro interno do servidor."},

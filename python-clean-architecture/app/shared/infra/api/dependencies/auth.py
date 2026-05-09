@@ -34,7 +34,7 @@ def get_jwt_provider() -> JWTProvider:
 TokenProvider = Annotated[JWTProvider, Depends(get_jwt_provider)]
 
 
-async def get_usuario_autenticado(
+def get_usuario_autenticado(
     token: Oauth2Token,
     token_provider: TokenProvider,
 ) -> UsuarioAutenticado:

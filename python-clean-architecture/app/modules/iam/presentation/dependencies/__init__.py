@@ -26,13 +26,13 @@ def get_hasher() -> HasherProtocol:
     return Hasher()
 
 
-async def get_usuario_repo(
+def get_usuario_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> UsuarioRepoProtocol:
     return UsuarioRepo(session)
 
 
-async def get_usuario_uow(
+def get_usuario_uow(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> UsuarioUoWProtocol:
     return usuario_uow_factory(session)  # type: ignore[misc]

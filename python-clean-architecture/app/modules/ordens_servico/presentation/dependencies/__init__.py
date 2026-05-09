@@ -53,31 +53,31 @@ from app.modules.ordens_servico.application.use_cases import (
 # ---------------------------------------------------------------------------
 
 
-async def get_ordem_servico_repo(
+def get_ordem_servico_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> OrdemServicoRepoProtocol:
     return OrdemServicoRepo(session)  # type: ignore[return-value]
 
 
-async def get_ordem_servico_uow(
+def get_ordem_servico_uow(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> OrdemServicoUoWProtocol:
     return ordem_servico_uow_factory(session)  # type: ignore[return-value]
 
 
-async def get_cliente_repo(
+def get_cliente_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ClienteRepo:
     return ClienteRepo(session)
 
 
-async def get_veiculo_repo(
+def get_veiculo_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> VeiculoRepo:
     return VeiculoRepo(session)
 
 
-async def get_servico_repo(
+def get_servico_repo(
     session: Annotated[DBSession, Depends(get_db_session)],
 ) -> ServicoRepo:
     return ServicoRepo(session)

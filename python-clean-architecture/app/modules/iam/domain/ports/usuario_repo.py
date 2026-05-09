@@ -3,7 +3,7 @@ from typing import Optional, Protocol
 from app.shared.value_objects.email import Email
 from app.shared.value_objects.id import ID
 from app.modules.iam.domain.filters.usuario import ListarUsuariosFiltro
-from app.modules.iam.domain.entities.usuario import Usuario
+from app.modules.iam.domain.entities.usuario import Usuario, UsuarioPerfil
 
 
 class UsuarioRepo(Protocol):
@@ -36,7 +36,7 @@ class UsuarioRepo(Protocol):
 
 ## relacao usuario_perfil
 
-    async def adicionar_perfil(self, usuario_id: ID, perfil_id: ID) -> None:
+    async def adicionar_perfil(self, usuario_perfil: UsuarioPerfil) -> None:
         """Associa um perfil a um usuário."""
         ...
 

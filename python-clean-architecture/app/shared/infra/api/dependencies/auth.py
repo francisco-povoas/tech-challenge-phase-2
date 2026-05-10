@@ -44,7 +44,6 @@ def get_usuario_autenticado(
     """
     try:
         user_id, perfis = token_provider.get_sub(token)
-        # Futuramente: extrair perfis do payload do token
         return UsuarioAutenticado(id=user_id, perfis=perfis)
     except InvalidToken:
         raise _credentials_exception

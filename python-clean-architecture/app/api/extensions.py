@@ -41,7 +41,7 @@ def validation_exception_handler(
 
 
 # Assegura que erros nao tratados sejam convertidos em respostas JSON genéricas, sem vazar detalhes do erro ou dados de entrada.
-def unhandled_exception_handler(request: Request, exc: Exception):
+def unhandled_exception_handler(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=500,
         content={"detail": "Erro interno do servidor."},

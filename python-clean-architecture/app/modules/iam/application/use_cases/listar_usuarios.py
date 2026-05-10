@@ -38,7 +38,6 @@ class ListarUsuariosUseCase:
                 id=str(usuario.id),
                 nome=usuario.nome,
                 email=usuario.email.value,
-                # perfis=usuario.perfis
             )
             for usuario in usuarios
         ]

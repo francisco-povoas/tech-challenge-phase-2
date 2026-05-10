@@ -123,7 +123,7 @@ async def listar(
         200: {"description": "Usuário encontrado", "model": UsuarioResponseWithPerfis},
         **_RESPONSES_AUTH,
         404: {"description": "Usuário não encontrado", "model": ErrorResponse},
-        422: {"description": "ID inválido ou erro de validação da requisição"},
+        422: {"description": "ID inválido ou erro de validação da requisição", "model": ErrorResponse},
     },
 )
 async def obter(usuario_id: UUID, usecase: ObterUsuario) -> UsuarioResponseWithPerfis:

@@ -35,7 +35,7 @@ class JWTProvider:
             "token_type": "bearer",
         }
 
-    def get_sub(self, token: str) -> str:
+    def get_sub(self, token: str) -> tuple[str, list[str]]:
         payload = self.decode(token)
         sub = payload.get("sub")
         if not isinstance(sub, str) or not sub:

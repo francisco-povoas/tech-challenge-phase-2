@@ -1,6 +1,5 @@
 from typing import List, Optional
 
-# from passlib.context import CryptContext
 import bcrypt
 
 from app.shared.ports.hasher import HasherProtocol

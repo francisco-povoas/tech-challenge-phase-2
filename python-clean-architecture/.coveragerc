@@ -1,0 +1,12 @@
+[run]
+relative_files = True
+source = app
+
+[paths]
+source =
+    app
+    /app/app
+    */python-clean-architecture/app
+
+[report]
+skip_empty = True

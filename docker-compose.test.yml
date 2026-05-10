@@ -28,10 +28,26 @@ services:
     working_dir: /app
     environment:
       DB_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
-    command: >
-      sh -c "alembic upgrade head &&
-             python scripts/seed_admin.py &&
-             pytest -p no:cacheprovider tests/integration/iam tests/integration/clientes tests/integration/veiculos tests/integration/servicos tests/integration/estoque tests/integration/ordens_servico -v --tb=short"
+    command:
+      - sh
+      - -c
+      - |
+        alembic upgrade head &&
+        python scripts/seed_admin.py &&
+        mkdir -p reports &&
+        COVERAGE_FILE=/tmp/.coverage pytest -p no:cacheprovider \
+          --cov-config=.coveragerc \
+          tests/integration/iam \
+          tests/integration/clientes \
+          tests/integration/veiculos \
+          tests/integration/servicos \
+          tests/integration/estoque \
+          tests/integration/ordens_servico \
+          -v \
+          --tb=short \
+          --cov=app \
+          --cov-config=.coveragerc \
+          --cov-report=xml:reports/coverage-integration.xml \
     volumes:
       - ./python-clean-architecture:/app
     depends_on:

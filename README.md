@@ -1,6 +1,4 @@
-# Python Clean Architecture
-
-## Overview
+# API de Gestão de Oficina — MVP
 
 <p align="left">
   <a href="https://skillicons.dev">
@@ -8,183 +6,141 @@
   </a>
 </p>
 
-Production-ready modern Python template featuring **Clean Architecture**, **Domain-Driven Design (DDD)**, and **FastAPI**. It demonstrates how to structure applications with proper separation of concerns, comprehensive testing, and type safety.
+MVP de uma API REST para gestão de oficina mecânica, construída com **FastAPI** e **Python 3.12**, organizada seguindo os princípios de **Domain-Driven Design (DDD)** e **Clean Architecture**.
 
-## Technology Stack
+O projeto cobre o ciclo completo de atendimento: da abertura da ordem de serviço até a entrega do veículo, passando por diagnóstico, orçamento, aprovação, execução, pagamento e histórico.
 
-This template provides a solid foundation that can be easily extended for any domain. It features:
+---
 
-- Language: [Python 3.12](https://www.python.org/)
-- Container: [Docker](https://www.docker.com/), and [Docker Compose](https://docs.docker.com/compose/)
-- Package management: [Poetry](https://python-poetry.org/)
-- Web framework: [FastAPI](https://fastapi.tiangolo.com/)
-- Web server: [Uvicorn](http://www.uvicorn.org/)
-- Database: [Postgres](https://www.postgresql.org/)
-- Database migrations: [Alembic](https://alembic.sqlalchemy.org/en/latest/)
-- ORM: [SQLModel](https://sqlmodel.tiangolo.com/)
-- Password hashing: [Passlib](https://passlib.readthedocs.io/)
-- Authentication: [OAuth2 + JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/)
-- Testing: [Pytest](https://docs.pytest.org/en/latest/)
-- Linter: [Ruff](https://github.com/astral-sh/ruff)
-- Type checker: [Mypy](https://mypy.readthedocs.io/en/stable/index.html)
-- Code formatter: [Ruff](https://github.com/astral-sh/ruff)
-- Pre-commit hooks: [Pre-commit](https://pre-commit.com/)
-- Local [development hot reload](#hot-reload), [watch](#watch-mode-for-tests) mode for tests, full [Asyncio](https://docs.python.org/3/library/asyncio.html) support, etc...
+## Tecnologias
 
-## What's Included
+- Python 3.12
+- FastAPI + Uvicorn
+- PostgreSQL 16
+- SQLModel / SQLAlchemy
+- Alembic
+- Pytest + Pytest-asyncio
+- Docker / Docker Compose
 
-- **User Management**: Complete user CRUD operations with proper DTOs and use cases
-- **Authentication System**: JWT-based authentication with OAuth2 support
-- **Clean Architecture Structure**: Well-organized layers with clear boundaries
-- **Value Objects**: Email, Password, and ID (UUID-validated) value objects with validation
-- **Repository Pattern**: Abstract interfaces with concrete implementations
-- **Unit of Work Pattern**: Transaction management across repositories
-- **Centralized Exception Handling**: Domain-specific exceptions for better error management
-- **Comprehensive Tests**: Unit tests using mocks and integration tests
-- **Development Tools**: Hot reload, test watch mode, and pre-commit hooks
+---
 
-📚 **Documentation:**
-- [FAQ & Architecture Guide](docs/FAQ.md) - Architecture overview and common questions
+## Estrutura do projeto
 
-## Usage
-
-While it's possible to run the application locally just using Python, it's highly recommended to install [Docker](https://www.docker.com/) to keep your local environment clean and facilitate the use of all the features.
-
-### Configuration
-
-The application uses environment variables for configuration. You can check all the available options [here](app/config.py). You can create and fill a `.env` file using the [.env.example](.env.example) file as a reference, or set them manually like this:
-
-```sh
-export DB_URL="<database_url>"
-export JWT_SECRET_KEY="<my_super_secret_key>"
-...
+```
+python-clean-architecture/
+├── app/
+│   ├── api/          # Rotas e controllers
+│   ├── modules/      # Módulos de domínio (iam, clientes, veículos, ordens de serviço…)
+│   └── shared/       # Infra compartilhada (banco, segurança, notificações)
+├── alembic/          # Migrations
+├── scripts/          # Seed e utilitários
+└── tests/
+    ├── unit/         # Testes unitários (sem banco)
+    ├── integration/  # Testes de integração (com banco de teste)
+    └── dev/          # Arquivos .http para testes manuais
 ```
 
-If using Docker, just edit the environment variables on [docker-compose.yml](./docker-compose.yml).
+---
 
-### Installing
+## Configuração
 
-Activate your Python [virtual environment](https://docs.python.org/3/library/venv.html) and run:
+Copie os arquivos de exemplo e ajuste as variáveis conforme o ambiente local:
 
-```sh
-poetry install
-
-# or
-
-pip install .
-```
-### Type Checking
-
-```sh
-mypy app tests
+```bash
+cp .env.dev-example .env.dev
+cp .env.test-example .env.test
 ```
 
-### Linting
+> Os arquivos `.env.*` reais não são versionados.
 
-```sh
-ruff check .
+---
+
+## Executando a aplicação
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-### Code Formatting
+A API estará disponível em: `http://localhost:8000`
 
-```sh
-ruff format app tests/
+---
+
+## Documentação da API
+
+Com a aplicação rodando:
+
+| Interface | URL |
+|---|---|
+| Swagger UI | http://localhost:8000/docs |
+| ReDoc | http://localhost:8000/redoc |
+| OpenAPI JSON | http://localhost:8000/openapi.json |
+
+---
+
+## Testes unitários
+
+- Não sobem a API nem o banco de dados.
+- Validam domínio, casos de uso e serviços internos de forma isolada.
+
+```bash
+docker compose -f docker-compose-unit.yml up --build --abort-on-container-exit
 ```
 
-### Pre-commit Hooks
+Relatório de cobertura gerado em:
 
-The template uses pre-commit hooks to automatically run linting, formatting, and type checking before commits:
-
-```sh
-# Install pre-commit hooks (run once after cloning)
-make pre-commit-install
-
-# Run all pre-commit hooks manually
-make pre-commit-run
-
-# Hooks will run automatically on git commit
-# To bypass hooks temporarily: git commit --no-verify
+```
+python-clean-architecture/reports/coverage-unit.xml
 ```
 
-### Starting the Application
+---
 
-⚠️ If not using Docker, remember to run the [init.sql](scripts/pg/init.sql) in your local database before running the application.
+## Testes de integração
 
-```sh
-# Local development (requires local PostgreSQL)
-alembic upgrade head && poetry run app
+- Sobem um PostgreSQL isolado para testes.
+- Executam migrations e seed antes dos testes.
+- Rodam contra a aplicação usando client HTTP de teste (sem servidor separado).
 
-# or
-alembic upgrade head && python -m app
-
-# with Docker - Production build (optimized image)
-docker compose up app pg-db -d
-
-# with Docker - Development build (with hot reload and dev dependencies)
-docker compose up app-dev pg-db -d
-
-# Using Make commands
-make docker-up          # Production Docker setup
-make docker-up-dev      # Development Docker setup with hot reload
+```bash
+docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
 ```
 
-Then, open the browser on [http://localhost:8080/docs](http://localhost:8080/docs) to see the OpenAPI docs:
+Relatório de cobertura gerado em:
 
-![](docs/openapi.png)
-
-### Tests
-
-```sh
-# to run all the tests
-pytest
-
-# to run only the unit tests
-pytest tests/unit/
-
-# to run only the integration tests
-pytest tests/integration/
-
-# with Docker
-docker compose up tests
+```
+python-clean-architecture/reports/coverage-integration.xml
 ```
 
-## Development Workflow
+Para limpar os containers e volumes após os testes:
 
-### Hot Reload
-
-By [default](/app/config.py#16), hot reload is configured independently of whether you're using Docker or not, so you can have faster development feedback like this:
-
-![](docs/dev-hot-reload.gif)
-
-### Watch Mode for Tests
-
-Tests can also be triggered automatically whenever a test file is modified due to the use of [pytest-watch](https://pypi.org/project/pytest-watch/), which leads to a nice and efficient TDD workflow:
-
-![](docs/test-hot-reload.gif)
-
-For other options, you can use:
-
-```sh
-# to watch all project tests (using dev image with dependencies)
-docker compose up watch
-
-# to watch only unit tests
-docker compose up watch-unit
-
-# to watch only integration tests
-docker compose up watch-integration
-
-# without Docker
-ptw -w -c tests/
-ptw -w -c tests/unit/
-ptw -w -c tests/integration/
-
-# Using Make commands for local development
-make watch-tests           # Watch all tests
-make watch-unit-tests      # Watch unit tests only
-make watch-integration-tests # Watch integration tests only
+```bash
+docker compose -f docker-compose.test.yml down -v
 ```
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Testes manuais com .http
+
+Os arquivos `.http` ficam em `tests/dev` e podem ser executados com a extensão **REST Client** do VS Code ou ferramenta compatível.
+
+**Pré-requisito:** a aplicação deve estar rodando (`docker-compose.dev.yml`).
+
+**Fluxo sugerido:**
+1. Execute o arquivo de autenticação (`tests/dev/modules/iam/auth.http`) para obter o token JWT.
+2. Use o token nos demais arquivos de teste.
+
+---
+
+## Docker Compose disponíveis
+
+| Arquivo | Uso |
+|---|---|
+| `docker-compose.dev.yml` | Sobe API e banco para desenvolvimento |
+| `docker-compose-unit.yml` | Executa testes unitários |
+| `docker-compose.test.yml` | Executa testes de integração com banco isolado |
+
+---
+
+## Status
+
+MVP acadêmico em desenvolvimento.
+

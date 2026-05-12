@@ -66,6 +66,11 @@
 ##  OS1-12.  Iniciar execução
 ##  OS1-13.  Registrar tempo executado 60 min
 ##  OS1-14.  Finalizar OS → status FINALIZADA
+##  OS1-15.  Registrar pagamento → FINALIZADA (pagamento preenchido)
+##  OS1-16.  Entregar OS → status ENTREGUE
+
+
+
 ##
 ## [OS 2 — FINALIZADA COM 75 MINUTOS]
 ##  OS2-01.  Criar cliente 2 → @cliente2Id
@@ -365,6 +370,33 @@ Authorization: Bearer {{tokenMecanico}}
 ## Esperado: status = FINALIZADA
 PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/finalizar HTTP/1.1
 Authorization: Bearer {{tokenMecanico}}
+
+###
+
+### [OS1-15] Atendente registra pagamento da OS 1
+## ► Esperado: HTTP 200
+## ► Esperado: OS continua FINALIZADA
+## ► Esperado: pagamento_registrado_em preenchido
+## ► Esperado: forma_pagamento = PIX
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/registrar-pagamento HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{tokenAtendente}}
+
+{
+    "forma_pagamento": "PIX",
+    "valor_pago": "270.00",
+    "observacao": "Pagamento recebido via PIX."
+}
+
+###
+
+### [OS1-16] Atendente entrega OS 1
+## ► Esperado: HTTP 200
+## ► Esperado: OS.status = ENTREGUE
+## ► Esperado: item da OS status = CONSUMIDO
+## ► Esperado: estoque.quantidade_reservada = 0 (baixa as unidades reservadas)
+PATCH {{baseUrl}}/api/v1/ordens-servico/{{ordemServico1Id}}/entregar HTTP/1.1
+Authorization: Bearer {{tokenAtendente}}
 
 ###
 

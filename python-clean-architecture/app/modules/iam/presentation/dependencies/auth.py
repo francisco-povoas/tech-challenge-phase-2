@@ -31,4 +31,4 @@ async def get_usuario_atual(
     return usuario
 
 
-UsuarioAtual = Annotated[UsuarioResponse, Depends(get_usuario_atual)]
+UsuarioAtual = Annotated[UsuarioResponseWithPerfis, Depends(get_usuario_atual)]

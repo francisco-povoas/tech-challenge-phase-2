@@ -8,7 +8,7 @@
 
 MVP de uma API REST para gestão de oficina mecânica, construída com **FastAPI** e **Python 3.12**, organizada seguindo os princípios de **Domain-Driven Design (DDD)** e **Clean Architecture**.
 
-O projeto cobre o ciclo completo de atendimento: da abertura da ordem de serviço até a entrega do veículo, passando por diagnóstico, orçamento, aprovação, execução, pagamento e histórico.
+O projeto cobre o ciclo completo de atendimento: da abertura da ordem de serviço até a entrega do veículo, passando por diagnóstico, orçamento, aprovação, execução, pagamento.
 
 ---
 
@@ -139,6 +139,13 @@ Os arquivos `.http` ficam em `tests/dev` e podem ser executados com a extensão 
 | `docker-compose.test.yml` | Executa testes de integração com banco isolado |
 
 ---
+
+## Decisões arquiteturais
+
+As principais decisões arquiteturais do projeto estão registradas em ADRs na pasta [`docs/adr`](docs/adr).
+
+- [ADR 1: Uso do PostgreSQL como banco de dados](docs/adr/0001-uso-do-postgresql.md)
+- [ADR 2: Explicação da utlização da arquitetura Clean Arch (PHASE 2)](docs/adr/2-uso-do-clean-arch.md)
 
 ## Status
 

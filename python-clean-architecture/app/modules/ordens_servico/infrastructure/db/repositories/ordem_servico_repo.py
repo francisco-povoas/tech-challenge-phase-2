@@ -79,6 +79,15 @@ class OrdemServicoRepo:
 
         if filtros.status is not None:
             query = query.where(OrdemServicoModel.status == filtros.status.value)
+        else:
+            query = query.where(
+                OrdemServicoModel.status.notin_(
+                    (
+                        StatusOrdemServico.ENTREGUE.value,
+                        StatusOrdemServico.ENCERRADA.value,
+                    )
+                )
+            )
         if filtros.cliente_id:
             query = query.where(OrdemServicoModel.cliente_id == UUID(filtros.cliente_id))
         if filtros.veiculo_id:
@@ -87,6 +96,21 @@ class OrdemServicoRepo:
             query = query.where(OrdemServicoModel.criado_em >= filtros.data_inicio)
         if filtros.data_fim:
             query = query.where(OrdemServicoModel.criado_em <= filtros.data_fim)
+
+        status_order = sa.case(
+            (OrdemServicoModel.status == StatusOrdemServico.EM_EXECUCAO.value, 1),
+            (OrdemServicoModel.status == StatusOrdemServico.AGUARDANDO_APROVACAO.value, 2),
+            (OrdemServicoModel.status == StatusOrdemServico.EM_DIAGNOSTICO.value, 3),
+            (OrdemServicoModel.status == StatusOrdemServico.RECEBIDA.value, 4),
+            else_=99
+        )
+
+        # Sem filtro por status, prioriza o funil operacional; com filtro explicito,
+        # o desempate efetivo passa a ser apenas pelas OS mais antigas primeiro.
+        query = query.order_by(
+            status_order,
+            OrdemServicoModel.criado_em.asc()
+        )
 
         result = await self.session.exec(query)
         return [self._os_to_entity(m) for m in result.all()]

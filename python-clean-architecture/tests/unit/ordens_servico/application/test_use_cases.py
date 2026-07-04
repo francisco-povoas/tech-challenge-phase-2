@@ -338,6 +338,14 @@ class TestListarOrdensServicoUseCase:
         assert resultado == []
         mock_os_repo.listar.assert_called_once()
 
+    async def test_delega_filtros_para_o_repositorio(self, mock_os_repo):
+        filtros = ListarOrdensServicoFiltro(status=StatusOrdemServico.FINALIZADA)
+
+        uc = ListarOrdensServicoUseCase(ordem_servico_repo=mock_os_repo)
+        await uc.execute(filtros)
+
+        mock_os_repo.listar.assert_called_once_with(filtros)
+
     async def test_retorna_os_encontradas(self, mock_os_repo):
         os1 = _os_fake()
         os2 = _os_fake(status=StatusOrdemServico.EM_DIAGNOSTICO)

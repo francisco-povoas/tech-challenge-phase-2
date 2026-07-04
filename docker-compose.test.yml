@@ -35,6 +35,7 @@ services:
         alembic upgrade head &&
         python scripts/seed_admin.py &&
         mkdir -p reports &&
+        rm -f reports/coverage-integration.xml &&
         COVERAGE_FILE=/tmp/.coverage pytest -p no:cacheprovider \
           --cov-config=.coveragerc \
           tests/integration/iam \

@@ -9,6 +9,7 @@ services:
       - -c
       - |
         mkdir -p reports &&
+        rm -f reports/coverage-unit.xml &&
         pytest -p no:cacheprovider -v tests/unit \
           --cov-config=.coveragerc \
           --cov=app/modules/iam/application \

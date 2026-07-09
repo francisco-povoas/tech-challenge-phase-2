@@ -1,0 +1,19 @@
+pytest -p no:cacheprovider -v tests/unit \
+  --cov-config=.coveragerc \
+  --cov=app/modules/iam/application \
+  --cov=app/modules/iam/domain \
+  --cov=app/modules/clientes/application \
+  --cov=app/modules/clientes/domain \
+  --cov=app/modules/veiculos/application \
+  --cov=app/modules/veiculos/domain \
+  --cov=app/modules/servicos/application \
+  --cov=app/modules/servicos/domain \
+  --cov=app/modules/estoque/application \
+  --cov=app/modules/estoque/domain \
+  --cov=app/modules/ordens_servico/application \
+  --cov=app/modules/ordens_servico/domain \
+  --cov=app/shared/infra/security \
+  --cov=app/shared/value_objects \
+  --cov=app/shared/infra/notifications \
+  --cov-report=term-missing \
+  --cov-fail-under=80

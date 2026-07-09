@@ -27,7 +27,6 @@ services:
           --cov=app/shared/infra/security \
           --cov=app/shared/value_objects \
           --cov=app/shared/infra/notifications \
-          --cov-config=.coveragerc \
           --cov-report=term-missing \
           --cov-report=xml:reports/coverage-unit.xml \
           --cov-fail-under=80

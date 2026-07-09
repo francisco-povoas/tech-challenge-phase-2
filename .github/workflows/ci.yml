@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - staging
+      - main
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: python-clean-architecture
+        run: |
+          pip install --upgrade pip \
+          && pip install --no-cache-dir  -r requirements.txt
+
+      - name: Run unit tests
+        working-directory: python-clean-architecture
+        run: sh scripts/test-unit-ci.sh

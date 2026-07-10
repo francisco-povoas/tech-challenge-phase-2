@@ -1,0 +1,3 @@
+aws_region        = "us-east-1"
+project_name      = "mvp-oficina"
+state_bucket_name = "tfstate-mvp-oficina-706619443268"

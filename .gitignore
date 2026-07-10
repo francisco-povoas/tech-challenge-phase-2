@@ -226,3 +226,13 @@ pyrightconfig.json
 .ionide
 data/
 .vscode/
+
+
+###
+
+# Terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/*.tfvars
+!**/*.tfvars.example

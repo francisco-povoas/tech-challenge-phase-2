@@ -40,3 +40,19 @@ jobs:
       - name: Run integration tests
         working-directory: python-clean-architecture
         run: sh scripts/test-integration-ci.sh
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.base_ref == 'staging'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Build apenas para validação no PR.
+      # Garante que a imagem Docker consegue ser construída antes da promoção para staging.
+      # Nenhuma imagem é enviada para o ECR nesta etapa.
+      - name: Build Docker image
+        run: |
+          docker build -t mvp-oficina-api:test .

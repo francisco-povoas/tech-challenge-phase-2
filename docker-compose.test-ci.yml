@@ -21,6 +21,7 @@ services:
       dockerfile: Dockerfile
     working_dir: /app
     environment:
+      ADMIN_PASSWORD: admin123456
       DB_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
     command:
       - sh
@@ -40,7 +41,7 @@ services:
           --tb=short \
           --cov=app \
           --cov-report=term-missing
-          --cov-fail-under=80
+          --cov-fail-under=80 \
 
     depends_on:
       db:

@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile
     working_dir: /app
     environment:
-      ADMIN_PASSWORD: admin123456
+      ADMIN_PASSWORD: admin123
       DB_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
     command:
       - sh

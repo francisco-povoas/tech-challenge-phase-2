@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - staging
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: python-clean-architecture
+        run: |
+          pip install --upgrade pip \
+          && pip install --no-cache-dir  -r requirements.txt
+
+      - name: Run unit tests
+        working-directory: python-clean-architecture
+        run: sh scripts/test-unit-ci.sh
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run integration tests
+        working-directory: python-clean-architecture
+        run: sh scripts/test-integration-ci.sh
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    # job so irah atuar se o PR tiver como destino o branch staging
+    if: github.base_ref == 'staging'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Build apenas para validação no PR.
+      # Garante que a imagem Docker consegue ser construída antes da promoção para staging.
+      # Nenhuma imagem é enviada para o ECR nesta etapa.
+      - name: Build Docker image
+        run: |
+          docker build -t mvp-oficina-api:test .

@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: "no"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      ADMIN_PASSWORD: admin123
+      DB_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
+    command:
+      - sh
+      - -c
+      - |
+        alembic upgrade head &&
+        python scripts/seed_admin.py &&
+        COVERAGE_FILE=/tmp/.coverage pytest -p no:cacheprovider \
+          --cov-config=.coveragerc \
+          tests/integration/iam \
+          tests/integration/clientes \
+          tests/integration/veiculos \
+          tests/integration/servicos \
+          tests/integration/estoque \
+          tests/integration/ordens_servico \
+          -v \
+          --tb=short \
+          --cov=app \
+          --cov-report=term-missing \
+          --cov-fail-under=70
+
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"

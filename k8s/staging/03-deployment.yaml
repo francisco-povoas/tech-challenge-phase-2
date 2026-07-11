@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mvp-oficina-api
+  namespace: staging
+  labels:
+    app: mvp-oficina-api
+    environment: staging
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: mvp-oficina-api
+
+  template:
+    metadata:
+      labels:
+        app: mvp-oficina-api
+        environment: staging
+
+    spec:
+      containers:
+        - name: mvp-oficina-api
+          image: 706619443268.dkr.ecr.us-east-1.amazonaws.com/mvp-oficina-api:bf60ca2dabb7e63402513d2ceff0f1a3de0c7f4c
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8000
+
+          envFrom:
+            - secretRef:
+                name: mvp-oficina-api-secrets
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /health-check
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /health-check
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5

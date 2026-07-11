@@ -3,3 +3,16 @@ project_name        = "mvp-oficina"
 environment         = "staging"
 ecr_repository_name = "mvp-oficina-api"
 db_password = "uma-senha-forte-aqui"
+eks_version = "1.30"
+
+eks_node_instance_types = ["t3.small"]
+eks_node_desired_size   = 1
+eks_node_min_size       = 1
+eks_node_max_size       = 2
+eks_supported_availability_zones = [
+  "us-east-1a",
+  "us-east-1b",
+  "us-east-1c",
+  "us-east-1d",
+  "us-east-1f"
+]

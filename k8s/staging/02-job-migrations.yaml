@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mvp-oficina-api-migrations
+  namespace: staging
+  labels:
+    app: mvp-oficina-api-migrations
+    environment: staging
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: mvp-oficina-api-migrations
+        job: migrations
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrations
+          image: 706619443268.dkr.ecr.us-east-1.amazonaws.com/mvp-oficina-api:bf60ca2dabb7e63402513d2ceff0f1a3de0c7f4c
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              alembic upgrade head
+              python scripts/seed_admin.py
+          envFrom:
+            - secretRef:
+                name: mvp-oficina-api-secrets

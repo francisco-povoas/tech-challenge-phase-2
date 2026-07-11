@@ -134,20 +134,18 @@ jobs:
         run: |
           echo "### Pods"
           kubectl get pods -n "$K8S_NAMESPACE" -o wide
+          echo ""
 
           echo ""
           echo "### Deployment"
           kubectl get deployment mvp-oficina-api -n "$K8S_NAMESPACE" -o wide
-
+          echo ""
+  
           echo ""
           echo "### Current deployment image"
           kubectl get deployment mvp-oficina-api \
             -n "$K8S_NAMESPACE" \
             -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-
-          echo ""
-          echo "### ReplicaSets"
-          kubectl get rs -n "$K8S_NAMESPACE"
 
           echo ""
           echo "### Service"
@@ -156,9 +154,3 @@ jobs:
           echo ""
           echo "### HPA"
           kubectl get hpa -n "$K8S_NAMESPACE"
-
-          echo ""
-          echo "### Recent events"
-          kubectl get events -n "$K8S_NAMESPACE" \
-            --sort-by='.lastTimestamp' \
-            | tail -n 30

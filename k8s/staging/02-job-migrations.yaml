@@ -17,7 +17,9 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrations
-          image: 706619443268.dkr.ecr.us-east-1.amazonaws.com/mvp-oficina-api:bf60ca2dabb7e63402513d2ceff0f1a3de0c7f4c
+          # A imagem é substituída no GitHub Actions via envsubst.
+          # O workflow define IMAGE_URI com a imagem recém-publicada no ECR usando github.
+          image: ${IMAGE_URI}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:

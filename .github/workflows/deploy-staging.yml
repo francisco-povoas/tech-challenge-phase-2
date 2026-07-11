@@ -7,10 +7,11 @@ on:
     paths:
       - "Dockerfile"
       - "python-clean-architecture/**"
+      - "k8s/staging/**"
       - ".github/workflows/deploy-staging.yml"
 
 jobs:
-  publish-image:
+  deploy-staging:
     runs-on: ubuntu-latest
     environment: staging
 
@@ -18,16 +19,11 @@ jobs:
       AWS_REGION: ${{ vars.AWS_REGION }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+      K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
       IMAGE_TAG: ${{ github.sha }}
 
     steps:
-      - name: Ensure staging branch
-        run: |
-          if [ "${{ github.ref }}" != "refs/heads/staging" ]; then
-            echo "This workflow must be executed from the staging branch."
-            exit 1
-          fi
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -48,10 +44,94 @@ jobs:
 
       - name: Build Docker image
         run: |
+          IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
+
           docker build \
-            -t "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG" \
+            -t "$IMAGE_URI" \
             .
 
       - name: Push Docker image
         run: |
-          docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
+          IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
+
+          docker push "$IMAGE_URI"
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$EKS_CLUSTER_NAME"
+
+      - name: Install envsubst
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext-base
+
+      - name: Apply namespace
+        run: |
+          kubectl apply -f k8s/staging/00-namespace.yaml
+
+      - name: Apply Kubernetes secrets
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_NOME: ${{ secrets.ADMIN_NOME }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          kubectl create secret generic mvp-oficina-api-secrets \
+            --namespace "$K8S_NAMESPACE" \
+            --from-literal=DB_URL="$DB_URL" \
+            --from-literal=DATABASE_URL="$DATABASE_URL" \
+            --from-literal=ADMIN_NOME="$ADMIN_NOME" \
+            --from-literal=ADMIN_EMAIL="$ADMIN_EMAIL" \
+            --from-literal=ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+            --dry-run=client \
+            -o yaml | kubectl apply -f -
+
+      - name: Run migrations
+        run: |
+          IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
+
+          kubectl delete job mvp-oficina-api-migrations \
+            -n "$K8S_NAMESPACE" \
+            --ignore-not-found
+
+          # O arquivo do Job usa image: ${IMAGE_URI}.
+          # O envsubst substitui essa variavel pela imagem recem-publicada no ECR
+          # antes de enviar o manifesto para o Kubernetes.
+
+          IMAGE_URI="$IMAGE_URI" envsubst < k8s/staging/02-job-migrations.yaml \
+            | kubectl apply -f -
+
+          kubectl wait --for=condition=complete \
+            job/mvp-oficina-api-migrations \
+            -n "$K8S_NAMESPACE" \
+            --timeout=180s
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/staging/03-deployment.yaml
+          kubectl apply -f k8s/staging/04-service.yaml
+          kubectl apply -f k8s/staging/05-hpa.yaml
+
+      - name: Update deployment image
+        run: |
+          IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
+
+          kubectl set image deployment/mvp-oficina-api \
+            mvp-oficina-api="$IMAGE_URI" \
+            -n "$K8S_NAMESPACE"
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/mvp-oficina-api \
+            -n "$K8S_NAMESPACE" \
+            --timeout=180s
+
+      - name: Show deployment status
+        if: always()
+        run: |
+          kubectl get pods -n "$K8S_NAMESPACE"
+          kubectl get svc -n "$K8S_NAMESPACE"
+          kubectl get hpa -n "$K8S_NAMESPACE"

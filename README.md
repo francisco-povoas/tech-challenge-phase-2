@@ -46,7 +46,7 @@ A aplicação é empacotada em uma imagem Docker e publicada no **Amazon ECR**. 
 
 A API é exposta por um **Service Kubernetes do tipo LoadBalancer**, que provisiona um **AWS Load Balancer** com DNS público. O **HPA** escala os pods automaticamente conforme consumo de CPU.
 
-![Arquitetura AWS Staging](docs/architecture-staging-aws.jpg)
+![Arquitetura AWS Staging](python-clean-architecture/docs/architecture-staging-aws.jpg)
 
 ### Recursos provisionados
 
@@ -71,7 +71,7 @@ A API é exposta por um **Service Kubernetes do tipo LoadBalancer**, que provisi
 
 O projeto utiliza GitHub Actions para validação e deploy do ambiente de staging.
 
-![Fluxo CI/CD](docs/ci-cd-staging.jpg)
+![Fluxo CI/CD](python-clean-architecture/docs/ci-cd-staging.jpg)
 
 ### Estratégia de branches
 
@@ -432,7 +432,6 @@ terraform destroy
 As principais decisões arquiteturais do projeto estão registradas em ADRs na pasta [`docs/adr`](docs/adr).
 
 - [ADR 1: Uso do PostgreSQL como banco de dados](docs/adr/0001-uso-do-postgresql.md)
-- [ADR 2: Uso de Clean Architecture na Fase 2](docs/adr/2-uso-do-clean-arch.md)
 
 ---
 

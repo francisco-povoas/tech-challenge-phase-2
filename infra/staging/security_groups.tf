@@ -10,7 +10,6 @@ resource "aws_security_group" "rds" {
     protocol    = "tcp"
 
     # Temporário para testes.
-    # Depois restringiremos para o security group do EKS.
     cidr_blocks = ["189.4.123.56/32"]
   }
 

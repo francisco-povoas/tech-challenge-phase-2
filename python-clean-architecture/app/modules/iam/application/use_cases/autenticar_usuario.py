@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from opentelemetry import trace
+
 from app.logger import setup_logger
 from app.shared.value_objects.email import Email, InvalidEmailError
 from app.shared.ports.hasher import HasherProtocol
@@ -8,6 +10,7 @@ from app.modules.iam.domain.exceptions import AutenticacaoFalhouError
 from app.modules.iam.domain.ports.usuario_repo import UsuarioRepo
 
 logger = setup_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 @dataclass(frozen=True)
@@ -27,7 +30,13 @@ class AutenticarUsuarioUseCase:
             raise AutenticacaoFalhouError("Credenciais inválidas")
 
         usuario = await self.usuario_repo.obter_por_email(email)
-        if not usuario or not self.hasher.verify(senha_str, usuario.senha.value):
+        if not usuario:
+            raise AutenticacaoFalhouError("Credenciais inválidas")
+
+        with tracer.start_as_current_span("auth.verify_password"):
+            senha_valida = self.hasher.verify(senha_str, usuario.senha.value)
+
+        if not senha_valida:
             raise AutenticacaoFalhouError("Credenciais inválidas")
 
         # buscar perfis do usuário

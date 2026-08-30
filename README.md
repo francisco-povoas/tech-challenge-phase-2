@@ -232,7 +232,7 @@ Os arquivos `.http` ficam em `tests/dev` e podem ser executados com a extensão 
 |---|---|
 | `docker-compose.dev.yml` | Sobe API e banco para desenvolvimento |
 | `docker-compose-unit.yml` | Executa testes unitários |
-| `docker-compose.test.yml` | Executa testes de integração com banco isolado |
+| `docker-compose.test.yml` | Executa testes de integração com banco isolado e possui instrumentação opentelemetry para envio de sinais ao coletor que exporta pro jaeger analisar os traces da aplicação|
 
 ---
 

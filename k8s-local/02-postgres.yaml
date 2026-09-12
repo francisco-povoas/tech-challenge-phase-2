@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mvp-oficina-postgres
+  namespace: local
+  labels:
+    app: mvp-oficina-postgres
+    environment: local
+spec:
+  type: ClusterIP
+  selector:
+    app: mvp-oficina-postgres
+  ports:
+    - name: postgresql
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mvp-oficina-postgres
+  namespace: local
+  labels:
+    app: mvp-oficina-postgres
+    environment: local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mvp-oficina-postgres
+  template:
+    metadata:
+      labels:
+        app: mvp-oficina-postgres
+        environment: local
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mvp-oficina-api-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mvp-oficina-api-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: mvp-oficina-api-secrets
+                  key: POSTGRES_DB
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        # Intencionalmente efêmero: o banco local não substitui o RDS de staging.
+        - name: postgres-data
+          emptyDir: {}

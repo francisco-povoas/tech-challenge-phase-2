@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mvp-oficina-api-migrations
+  namespace: local
+  labels:
+    app: mvp-oficina-api-migrations
+    environment: local
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: mvp-oficina-api-migrations
+        job: migrations
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - until pg_isready -h mvp-oficina-postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done
+          envFrom:
+            - secretRef:
+                name: mvp-oficina-api-secrets
+      containers:
+        - name: migrations
+          image: mvp-oficina-api:local
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              alembic upgrade head
+              python scripts/seed_admin.py
+          envFrom:
+            - secretRef:
+                name: mvp-oficina-api-secrets
